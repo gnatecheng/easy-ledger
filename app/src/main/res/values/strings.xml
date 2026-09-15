@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">轻记账</string>
+    <string name="widget_description">本月收入、支出与结余</string>
+    <string name="widget_label">本月结余</string>
+</resources>
