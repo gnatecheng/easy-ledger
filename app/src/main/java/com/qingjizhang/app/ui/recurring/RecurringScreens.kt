@@ -244,14 +244,14 @@ fun RecurringEditScreen(ruleId: Long, onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                TxnKind.entries.forEachIndexed { i, k ->
+                TxnKind.ledger.forEachIndexed { i, k ->
                     SegmentedButton(
                         selected = kind == k,
                         onClick = {
                             kind = k
                             categoryId = cats.firstOrNull { it.kind == k && !it.archived }?.id ?: 0
                         },
-                        shape = SegmentedButtonDefaults.itemShape(i, 2),
+                        shape = SegmentedButtonDefaults.itemShape(i, TxnKind.ledger.size),
                     ) { Text(k.label) }
                 }
             }

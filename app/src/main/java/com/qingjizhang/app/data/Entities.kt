@@ -29,7 +29,7 @@ data class CategoryEntity(
 
 @Entity(
     tableName = "transactions",
-    indices = [Index("accountId"), Index("categoryId"), Index("occurredAt")],
+    indices = [Index("accountId"), Index("categoryId"), Index("occurredAt"), Index("transferToAccountId")],
     foreignKeys = [
         ForeignKey(
             entity = AccountEntity::class,
@@ -58,6 +58,7 @@ data class TransactionEntity(
     val updatedAt: Long,
     val receiptPath: String? = null,
     val recurringRuleId: Long? = null,
+    val transferToAccountId: Long? = null,
 )
 
 @Entity(tableName = "budgets")

@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -30,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -41,6 +43,7 @@ import com.qingjizhang.app.domain.Account
 import com.qingjizhang.app.domain.Budget
 import com.qingjizhang.app.domain.BudgetStatus
 import com.qingjizhang.app.domain.Category
+import com.qingjizhang.app.domain.CategorySlice
 import com.qingjizhang.app.domain.Dates
 import com.qingjizhang.app.domain.Money
 import com.qingjizhang.app.domain.MonthSummary
@@ -57,6 +60,7 @@ import com.qingjizhang.app.ui.components.MonthSwitcher
 import com.qingjizhang.app.ui.components.MoneyText
 import com.qingjizhang.app.ui.components.SectionTitle
 import com.qingjizhang.app.ui.components.TxnRow
+import com.qingjizhang.app.ui.share.MonthShare
 import com.qingjizhang.app.ui.theme.ExpenseSoft
 import com.qingjizhang.app.ui.theme.IncomeSoft
 import com.qingjizhang.app.ui.theme.InkMuted
@@ -86,6 +90,7 @@ data class HomeUi(
     val budgetStatuses: List<BudgetStatus> = emptyList(),
     val settings: AppSettings = AppSettings(),
     val lastTxnAt: Long? = null,
+    val slices: List<CategorySlice> = emptyList(),
 )
 
 class HomeViewModel(private val app: AppContainer) : ViewModel() {
@@ -117,6 +122,7 @@ class HomeViewModel(private val app: AppContainer) : ViewModel() {
             budgetStatuses = com.qingjizhang.app.data.FinanceRepository.budgetStatuses(t.budgets, monthTxns, t.cats),
             settings = settings,
             lastTxnAt = t.txns.maxOfOrNull { it.occurredAt },
+            slices = com.qingjizhang.app.data.FinanceRepository.slices(monthTxns, TxnKind.EXPENSE, t.cats),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUi())
 
@@ -153,30 +159,45 @@ fun HomeScreen(
     onQuickAdd: () -> Unit,
     onOpenTxns: () -> Unit,
     onOpenBudgets: () -> Unit,
+    onTransfer: () -> Unit = {},
 ) {
     val app = LocalApp.current
     val vm: HomeViewModel = viewModel(factory = HomeViewModel.factory(app))
     val ui by vm.ui.collectAsState()
     val dismissed by vm.dismissedKeys.collectAsState()
+    val context = LocalContext.current
 
     val alerts = FinanceAlerts.build(ui, dismissed)
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(onClick = onQuickAdd) {
-                Icon(Icons.Default.Add, contentDescription = "记一笔")
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                FloatingActionButton(
+                    onClick = onTransfer,
+                    containerColor = com.qingjizhang.app.ui.theme.Transfer,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ) {
+                    Icon(Icons.Outlined.SwapHoriz, contentDescription = "转账")
+                }
+                FloatingActionButton(onClick = onQuickAdd) {
+                    Icon(Icons.Default.Add, contentDescription = "记一笔")
+                }
             }
         },
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 88.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 140.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
                 Text("轻记账", style = MaterialTheme.typography.headlineMedium)
                 Text("把每一笔都记清楚", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
                 MonthSwitcher(ui.month, onChange = { vm.month.value = it })
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = { MonthShare.shareImage(context, ui.summary, ui.slices) }) { Text("分享月报") }
+                    TextButton(onClick = { MonthShare.sharePdf(context, ui.summary, ui.slices) }) { Text("导出 PDF") }
+                }
             }
             items(alerts, key = { it.key }) { alert ->
                 Banner(
@@ -201,6 +222,14 @@ fun HomeScreen(
                     Spacer(Modifier.height(4.dp))
                     MoneyText(ui.summary.balanceCents, large = true)
                     DeltaChip(ui.summary.balanceCents, ui.prev.balanceCents)
+                    if (ui.summary.transferCents > 0) {
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "本月转账 ${Money.formatYuan(ui.summary.transferCents)}（不计入收支）",
+                            color = InkMuted,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
                 }
             }
             if (ui.budgetStatuses.isNotEmpty()) {

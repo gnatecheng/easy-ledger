@@ -17,6 +17,7 @@ data class AppSettings(
     val inactivityNudgeDays: Int = 3,
     val demoSeeded: Boolean = false,
     val nudgeDismissedAt: Long = 0L,
+    val darkTheme: Boolean = false,
 )
 
 class SettingsStore(context: Context) {
@@ -31,6 +32,7 @@ class SettingsStore(context: Context) {
             prefs[Keys.INACTIVITY] = next.inactivityNudgeDays
             prefs[Keys.DEMO] = next.demoSeeded
             prefs[Keys.NUDGE] = next.nudgeDismissedAt
+            prefs[Keys.DARK] = next.darkTheme
         }
     }
 
@@ -39,6 +41,7 @@ class SettingsStore(context: Context) {
         val INACTIVITY = intPreferencesKey("inactivity_nudge_days")
         val DEMO = booleanPreferencesKey("demo_seeded")
         val NUDGE = longPreferencesKey("nudge_dismissed_at")
+        val DARK = booleanPreferencesKey("dark_theme")
     }
 
     private fun Preferences.toSettings() = AppSettings(
@@ -46,5 +49,6 @@ class SettingsStore(context: Context) {
         inactivityNudgeDays = this[Keys.INACTIVITY] ?: 3,
         demoSeeded = this[Keys.DEMO] ?: false,
         nudgeDismissedAt = this[Keys.NUDGE] ?: 0L,
+        darkTheme = this[Keys.DARK] ?: false,
     )
 }

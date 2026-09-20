@@ -34,6 +34,7 @@ import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Repeat
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -52,6 +53,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -90,7 +92,6 @@ import com.qingjizhang.app.ui.components.AppCard
 import com.qingjizhang.app.ui.components.ColorDot
 import com.qingjizhang.app.ui.components.MoneyText
 import com.qingjizhang.app.ui.theme.InkMuted
-import com.qingjizhang.app.ui.theme.SurfaceCard
 import com.qingjizhang.app.ui.vmFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
@@ -111,6 +112,8 @@ fun MineScreen(
     val app = LocalApp.current
     val accounts by app.repo.observeAccounts().collectAsState(initial = emptyList())
     val txns by app.repo.observeTransactions().collectAsState(initial = emptyList())
+    val settings by app.settings.settings.collectAsState(initial = com.qingjizhang.app.data.AppSettings())
+    val scope = rememberCoroutineScope()
     Column(
         Modifier
             .fillMaxSize()
@@ -136,6 +139,22 @@ fun MineScreen(
             MenuRow("提醒设置", "大额阈值、未记账提醒", Icons.Outlined.Notifications, onSettings)
         }
         AppCard {
+            ListItem(
+                headlineContent = { Text("深色模式") },
+                supportingContent = { Text("夜间使用更护眼，数据仍只保存在本机") },
+                leadingContent = { Icon(Icons.Outlined.DarkMode, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                trailingContent = {
+                    Switch(
+                        checked = settings.darkTheme,
+                        onCheckedChange = { checked ->
+                            scope.launch { app.settings.update { it.copy(darkTheme = checked) } }
+                        },
+                    )
+                },
+                colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
+            )
+        }
+        AppCard {
             Text("关于轻记账", fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(6.dp))
             Text("版本 ${BuildConfig.VERSION_NAME}（${BuildConfig.VERSION_CODE}）", color = InkMuted)
@@ -153,7 +172,7 @@ private fun MenuRow(title: String, subtitle: String, icon: ImageVector, onClick:
         leadingContent = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
         trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
         modifier = Modifier.clickable(onClick = onClick),
-        colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = SurfaceCard),
+        colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
     )
 }
 
@@ -221,11 +240,11 @@ fun CategoriesScreen(onBack: () -> Unit) {
     ) { padding ->
         Column(Modifier.padding(padding).padding(16.dp)) {
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                TxnKind.entries.forEachIndexed { i, k ->
+                TxnKind.ledger.forEachIndexed { i, k ->
                     SegmentedButton(
                         selected = kind == k,
                         onClick = { kind = k },
-                        shape = SegmentedButtonDefaults.itemShape(i, 2),
+                        shape = SegmentedButtonDefaults.itemShape(i, TxnKind.ledger.size),
                     ) { Text(k.label) }
                 }
             }
@@ -420,6 +439,10 @@ class SettingsVm(private val app: AppContainer) : ViewModel() {
         }
     }
 
+    fun setDarkTheme(enabled: Boolean) {
+        viewModelScope.launch { app.settings.update { it.copy(darkTheme = enabled) } }
+    }
+
     fun clearDemo(onDone: () -> Unit) {
         viewModelScope.launch {
             app.repo.deleteAllTransactions()
@@ -457,13 +480,21 @@ fun SettingsScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("提醒设置") },
+                title = { Text("设置") },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") } },
             )
         },
         snackbarHost = { SnackbarHost(snack) },
     ) { padding ->
         Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            AppCard {
+                Text("外观", fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("深色模式", modifier = Modifier.weight(1f))
+                    Switch(checked = settings.darkTheme, onCheckedChange = { vm.setDarkTheme(it) })
+                }
+            }
             AppCard {
                 Text("大额交易提醒", fontWeight = FontWeight.Medium)
                 Text("单笔金额达到该阈值时，首页会显示醒目横幅。", color = InkMuted, style = MaterialTheme.typography.bodyMedium)

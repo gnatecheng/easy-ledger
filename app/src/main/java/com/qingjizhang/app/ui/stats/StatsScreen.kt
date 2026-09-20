@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -44,6 +45,7 @@ import com.qingjizhang.app.ui.components.CategoryPieChart
 import com.qingjizhang.app.ui.components.DeltaChip
 import com.qingjizhang.app.ui.components.MoneyText
 import com.qingjizhang.app.ui.components.TrendChart
+import com.qingjizhang.app.ui.share.MonthShare
 import com.qingjizhang.app.ui.theme.InkMuted
 import com.qingjizhang.app.ui.vmFactory
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -71,6 +73,7 @@ data class StatsUi(
     val trend: List<MonthSummary> = emptyList(),
     val income: Long = 0,
     val expense: Long = 0,
+    val transfer: Long = 0,
     val prevIncome: Long = 0,
     val prevExpense: Long = 0,
 )
@@ -105,6 +108,7 @@ class StatsViewModel(app: AppContainer) : ViewModel() {
                 ym,
                 inMonth.filter { it.kind == TxnKind.INCOME }.sumOf { it.amountCents },
                 inMonth.filter { it.kind == TxnKind.EXPENSE }.sumOf { it.amountCents },
+                inMonth.filter { it.kind == TxnKind.TRANSFER }.sumOf { it.amountCents },
             )
         }
         StatsUi(
@@ -121,6 +125,7 @@ class StatsViewModel(app: AppContainer) : ViewModel() {
             trend = months,
             income = filtered.filter { it.kind == TxnKind.INCOME }.sumOf { it.amountCents },
             expense = filtered.filter { it.kind == TxnKind.EXPENSE }.sumOf { it.amountCents },
+            transfer = filtered.filter { it.kind == TxnKind.TRANSFER }.sumOf { it.amountCents },
             prevIncome = prev.filter { it.kind == TxnKind.INCOME }.sumOf { it.amountCents },
             prevExpense = prev.filter { it.kind == TxnKind.EXPENSE }.sumOf { it.amountCents },
         )
@@ -161,6 +166,7 @@ fun StatsScreen() {
     val ui by vm.ui.collectAsState()
     var pickingStart by remember { mutableStateOf(false) }
     var pickingEnd by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Column(
         Modifier
@@ -171,6 +177,22 @@ fun StatsScreen() {
     ) {
         Text("统计", style = MaterialTheme.typography.headlineMedium)
         Text("看看钱都去哪了", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(onClick = {
+                MonthShare.shareImage(
+                    context,
+                    MonthSummary(YearMonth.now(), ui.income, ui.expense, ui.transfer),
+                    ui.slices,
+                )
+            }) { Text("分享月报") }
+            TextButton(onClick = {
+                MonthShare.sharePdf(
+                    context,
+                    MonthSummary(YearMonth.now(), ui.income, ui.expense, ui.transfer),
+                    ui.slices,
+                )
+            }) { Text("导出 PDF") }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(ui.preset == RangePreset.THIS_MONTH, { vm.preset.value = RangePreset.THIS_MONTH }, label = { Text("本月") })
             FilterChip(ui.preset == RangePreset.LAST_3, { vm.preset.value = RangePreset.LAST_3 }, label = { Text("近3月") })
@@ -221,6 +243,10 @@ fun StatsScreen() {
             Text("结余", color = InkMuted)
             MoneyText(ui.income - ui.expense, large = true)
             Text("${ui.start} 至 ${ui.end} · ${ui.filtered.size} 笔", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+            if (ui.transfer > 0) {
+                Spacer(Modifier.height(6.dp))
+                Text("期间转账 ${com.qingjizhang.app.domain.Money.formatYuan(ui.transfer)}（不计入收支）", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+            }
         }
         AppCard {
             Text("分类占比", style = MaterialTheme.typography.titleMedium)

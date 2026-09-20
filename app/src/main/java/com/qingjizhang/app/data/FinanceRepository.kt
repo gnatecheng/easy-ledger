@@ -7,6 +7,7 @@ import com.qingjizhang.app.domain.BudgetStatus
 import com.qingjizhang.app.domain.Category
 import com.qingjizhang.app.domain.CategorySlice
 import com.qingjizhang.app.domain.Dates
+import com.qingjizhang.app.domain.Money
 import com.qingjizhang.app.domain.MonthSummary
 import com.qingjizhang.app.domain.RecurringDates
 import com.qingjizhang.app.domain.RecurringFrequency
@@ -38,7 +39,7 @@ class FinanceRepository(
     fun observeAccounts(): Flow<List<Account>> =
         combine(accounts.observeAll(), transactions.observeAll()) { accs, txns ->
             accs.map { acc ->
-                val delta = txns.filter { it.accountId == acc.id }.sumOf { it.signed() }
+                val delta = txns.sumOf { it.balanceDeltaFor(acc.id) }
                 acc.toDomain(acc.initialBalanceCents + delta)
             }
         }
@@ -64,7 +65,7 @@ class FinanceRepository(
         ) { txns, cats, accs ->
             val catMap = cats.associateBy { it.id }
             val accMap = accs.associateBy { it.id }
-            txns.map { it.toDomain(catMap[it.categoryId], accMap[it.accountId]) }
+            txns.map { it.toDomain(catMap, accMap) }
         }
 
     fun observeRange(start: Long, endExclusive: Long): Flow<List<Txn>> =
@@ -75,12 +76,29 @@ class FinanceRepository(
         ) { txns, cats, accs ->
             val catMap = cats.associateBy { it.id }
             val accMap = accs.associateBy { it.id }
-            txns.map { it.toDomain(catMap[it.categoryId], accMap[it.accountId]) }
+            txns.map { it.toDomain(catMap, accMap) }
         }
 
     suspend fun getTxn(id: Long): Txn? {
         val entity = transactions.getById(id) ?: return null
-        return entity.toDomain(categories.getById(entity.categoryId), accounts.getById(entity.accountId))
+        return entity.toDomain(
+            categories.getAll().associateBy { it.id },
+            accounts.getAll().associateBy { it.id },
+        )
+    }
+
+    suspend fun ensureTransferCategory(): Long {
+        val existing = categories.getAll().find { it.kind == TxnKind.TRANSFER.name }
+        if (existing != null) return existing.id
+        return categories.insert(
+            CategoryEntity(
+                name = "转账",
+                kind = TxnKind.TRANSFER.name,
+                colorArgb = 0xFF3D7EA6.toInt(),
+                emoji = "🔁",
+                sortOrder = 999,
+            ),
+        )
     }
 
     suspend fun upsertTxn(
@@ -94,15 +112,18 @@ class FinanceRepository(
         tags: List<String>,
         receiptPath: String? = null,
         recurringRuleId: Long? = null,
+        transferToAccountId: Long? = null,
     ): Long {
         val now = System.currentTimeMillis()
+        val resolvedCategoryId = if (kind == TxnKind.TRANSFER) ensureTransferCategory() else categoryId
+        val resolvedTransferTo = if (kind == TxnKind.TRANSFER) transferToAccountId else null
         val result = if (id == null || id == 0L) {
             transactions.insert(
                 TransactionEntity(
                     amountCents = amountCents,
                     kind = kind.name,
                     occurredAt = occurredAt,
-                    categoryId = categoryId,
+                    categoryId = resolvedCategoryId,
                     accountId = accountId,
                     note = note.trim(),
                     tags = tags.joinTags(),
@@ -110,6 +131,7 @@ class FinanceRepository(
                     updatedAt = now,
                     receiptPath = receiptPath,
                     recurringRuleId = recurringRuleId,
+                    transferToAccountId = resolvedTransferTo,
                 ),
             )
         } else {
@@ -122,12 +144,13 @@ class FinanceRepository(
                     amountCents = amountCents,
                     kind = kind.name,
                     occurredAt = occurredAt,
-                    categoryId = categoryId,
+                    categoryId = resolvedCategoryId,
                     accountId = accountId,
                     note = note.trim(),
                     tags = tags.joinTags(),
                     updatedAt = now,
                     receiptPath = receiptPath,
+                    transferToAccountId = resolvedTransferTo,
                 ),
             )
             id
@@ -347,6 +370,7 @@ class FinanceRepository(
                 yearMonth = ym,
                 incomeCents = inMonth.filter { it.kind == TxnKind.INCOME }.sumOf { it.amountCents },
                 expenseCents = inMonth.filter { it.kind == TxnKind.EXPENSE }.sumOf { it.amountCents },
+                transferCents = inMonth.filter { it.kind == TxnKind.TRANSFER }.sumOf { it.amountCents },
             )
         }
 
@@ -385,30 +409,46 @@ class FinanceRepository(
             tag: String?,
             startDate: LocalDate?,
             endDate: LocalDate?,
+            minCents: Long? = null,
+            maxCents: Long? = null,
         ): List<Txn> {
             val q = query.trim()
             return txns.filter { t ->
                 val qOk = q.isEmpty() ||
                     t.note.contains(q, true) ||
+                    t.tags.any { it.contains(q, true) } ||
                     t.categoryName.contains(q, true) ||
                     t.accountName.contains(q, true) ||
-                    t.tags.any { it.contains(q, true) } ||
+                    t.transferToAccountName.contains(q, true) ||
                     t.amountCents.toString().contains(q) ||
-                    (t.amountCents / 100.0).toString().contains(q)
+                    Money.formatPlain(t.amountCents).contains(q)
                 val kindOk = kind == null || t.kind == kind
-                val accOk = accountId == null || t.accountId == accountId
+                val accOk = accountId == null ||
+                    t.accountId == accountId ||
+                    t.transferToAccountId == accountId
                 val catOk = categoryId == null || t.categoryId == categoryId
                 val tagOk = tag.isNullOrBlank() || t.tags.any { it.equals(tag, true) }
                 val startOk = startDate == null || !t.date.isBefore(startDate)
                 val endOk = endDate == null || !t.date.isAfter(endDate)
-                qOk && kindOk && accOk && catOk && tagOk && startOk && endOk
+                val minOk = minCents == null || t.amountCents >= minCents
+                val maxOk = maxCents == null || t.amountCents <= maxCents
+                qOk && kindOk && accOk && catOk && tagOk && startOk && endOk && minOk && maxOk
             }
         }
     }
 }
 
-private fun TransactionEntity.signed(): Long =
-    if (kind == TxnKind.INCOME.name) amountCents else -amountCents
+private fun TransactionEntity.balanceDeltaFor(accountId: Long): Long {
+    return when (kind) {
+        TxnKind.INCOME.name -> if (this.accountId == accountId) amountCents else 0L
+        TxnKind.TRANSFER.name -> when {
+            this.accountId == accountId -> -amountCents
+            this.transferToAccountId == accountId -> amountCents
+            else -> 0L
+        }
+        else -> if (this.accountId == accountId) -amountCents else 0L
+    }
+}
 
 private fun AccountEntity.toDomain(balance: Long) = Account(
     id, name, AccountType.fromRaw(type), initialBalanceCents, colorArgb, archived, sortOrder, balance,
@@ -440,25 +480,36 @@ private fun RecurringRuleEntity.toDomain(cat: CategoryEntity?, acc: AccountEntit
     accountName = acc?.name.orEmpty(),
 )
 
-private fun TransactionEntity.toDomain(cat: CategoryEntity?, acc: AccountEntity?) = Txn(
-    id = id,
-    amountCents = amountCents,
-    kind = TxnKind.fromRaw(kind),
-    occurredAt = occurredAt,
-    categoryId = categoryId,
-    accountId = accountId,
-    note = note,
-    tags = tags.parseTags(),
-    createdAt = createdAt,
-    updatedAt = updatedAt,
-    categoryName = cat?.name.orEmpty(),
-    categoryColor = cat?.colorArgb ?: 0,
-    categoryEmoji = cat?.emoji.orEmpty(),
-    accountName = acc?.name.orEmpty(),
-    accountColor = acc?.colorArgb ?: 0,
-    receiptPath = receiptPath,
-    recurringRuleId = recurringRuleId,
-)
+private fun TransactionEntity.toDomain(
+    catMap: Map<Long, CategoryEntity>,
+    accMap: Map<Long, AccountEntity>,
+): Txn {
+    val cat = catMap[categoryId]
+    val acc = accMap[accountId]
+    val toAcc = transferToAccountId?.let { accMap[it] }
+    return Txn(
+        id = id,
+        amountCents = amountCents,
+        kind = TxnKind.fromRaw(kind),
+        occurredAt = occurredAt,
+        categoryId = categoryId,
+        accountId = accountId,
+        note = note,
+        tags = tags.parseTags(),
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        categoryName = cat?.name.orEmpty(),
+        categoryColor = cat?.colorArgb ?: 0,
+        categoryEmoji = cat?.emoji.orEmpty(),
+        accountName = acc?.name.orEmpty(),
+        accountColor = acc?.colorArgb ?: 0,
+        receiptPath = receiptPath,
+        recurringRuleId = recurringRuleId,
+        transferToAccountId = transferToAccountId,
+        transferToAccountName = toAcc?.name.orEmpty(),
+        transferToAccountColor = toAcc?.colorArgb ?: 0,
+    )
+}
 
 data class BackupSnapshot(
     val accounts: List<AccountEntity>,

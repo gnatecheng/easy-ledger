@@ -39,6 +39,7 @@ import com.qingjizhang.app.ui.stats.StatsScreen
 import com.qingjizhang.app.ui.txn.QuickAddSheet
 import com.qingjizhang.app.ui.txn.TransactionEditScreen
 import com.qingjizhang.app.ui.txn.TransactionListScreen
+import com.qingjizhang.app.domain.TxnKind
 
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
 
@@ -57,6 +58,7 @@ fun QingJiZhangRoot() {
     val route = backStack?.destination?.route.orEmpty()
     val showBottom = tabs.any { it.route == route }
     var quickAdd by rememberSaveable { mutableStateOf(false) }
+    var quickKind by rememberSaveable { mutableStateOf("EXPENSE") }
 
     Scaffold(
         bottomBar = {
@@ -88,7 +90,14 @@ fun QingJiZhangRoot() {
             composable("home") {
                 HomeScreen(
                     onOpenTxn = { nav.navigate("txn/edit/$it") },
-                    onQuickAdd = { quickAdd = true },
+                    onQuickAdd = {
+                        quickKind = TxnKind.EXPENSE.name
+                        quickAdd = true
+                    },
+                    onTransfer = {
+                        quickKind = TxnKind.TRANSFER.name
+                        quickAdd = true
+                    },
                     onOpenTxns = {
                         nav.navigate("txns") {
                             popUpTo(nav.graph.findStartDestination().id) { saveState = true }
@@ -108,7 +117,14 @@ fun QingJiZhangRoot() {
             composable("txns") {
                 TransactionListScreen(
                     onOpenTxn = { nav.navigate("txn/edit/$it") },
-                    onQuickAdd = { quickAdd = true },
+                    onQuickAdd = {
+                        quickKind = TxnKind.EXPENSE.name
+                        quickAdd = true
+                    },
+                    onTransfer = {
+                        quickKind = TxnKind.TRANSFER.name
+                        quickAdd = true
+                    },
                 )
             }
             composable("stats") { StatsScreen() }
@@ -151,6 +167,9 @@ fun QingJiZhangRoot() {
         }
     }
     if (quickAdd) {
-        QuickAddSheet(onDismiss = { quickAdd = false })
+        QuickAddSheet(
+            initialKind = TxnKind.fromRaw(quickKind),
+            onDismiss = { quickAdd = false },
+        )
     }
 }
