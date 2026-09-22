@@ -10,12 +10,19 @@ import java.util.Locale
 
 enum class TxnKind(val label: String) {
     EXPENSE("支出"),
-    INCOME("收入");
+    INCOME("收入"),
+    TRANSFER("转账");
 
     companion object {
+        val ledger: List<TxnKind> = listOf(EXPENSE, INCOME)
+
         fun fromRaw(raw: String): TxnKind =
             entries.find { it.name.equals(raw, true) || it.label == raw }
-                ?: if (raw.contains("收") || raw.equals("in", true)) INCOME else EXPENSE
+                ?: when {
+                    raw.contains("转") || raw.equals("transfer", true) -> TRANSFER
+                    raw.contains("收") || raw.equals("in", true) -> INCOME
+                    else -> EXPENSE
+                }
     }
 }
 
@@ -72,8 +79,15 @@ data class Txn(
     val accountColor: Int = 0,
     val receiptPath: String? = null,
     val recurringRuleId: Long? = null,
+    val transferToAccountId: Long? = null,
+    val transferToAccountName: String = "",
+    val transferToAccountColor: Int = 0,
 ) {
-    val signedCents: Long get() = if (kind == TxnKind.INCOME) amountCents else -amountCents
+    val signedCents: Long get() = when (kind) {
+        TxnKind.INCOME -> amountCents
+        TxnKind.EXPENSE -> -amountCents
+        TxnKind.TRANSFER -> 0L
+    }
     val dateTime: LocalDateTime
         get() = Instant.ofEpochMilli(occurredAt).atZone(ZoneId.systemDefault()).toLocalDateTime()
     val date: LocalDate get() = dateTime.toLocalDate()
@@ -89,6 +103,7 @@ data class MonthSummary(
     val yearMonth: YearMonth,
     val incomeCents: Long,
     val expenseCents: Long,
+    val transferCents: Long = 0,
 ) {
     val balanceCents: Long get() = incomeCents - expenseCents
 }

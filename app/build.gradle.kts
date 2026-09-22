@@ -14,12 +14,19 @@ android {
         applicationId = "com.qingjizhang.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.2.0"
         vectorDrawables.useSupportLibrary = true
     }
 
-    // signingConfigs omitted from this source archive (no keystore/passwords).
+    signingConfigs {
+        create("release") {
+            storeFile = file("qingjizhang-release.jks")
+            storePassword = "qingjizhang"
+            keyAlias = "qingjizhang"
+            keyPassword = "qingjizhang"
+        }
+    }
 
     buildTypes {
         release {

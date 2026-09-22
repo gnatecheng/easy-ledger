@@ -110,7 +110,14 @@ class Seeder(
                 sortOrder = i,
             )
         }
-        db.categories().insertAll(expenseCats + incomeCats)
+        val transferCat = CategoryEntity(
+            name = "转账",
+            kind = TxnKind.TRANSFER.name,
+            colorArgb = 0xFF3D7EA6.toInt(),
+            emoji = "🔁",
+            sortOrder = 999,
+        )
+        db.categories().insertAll(expenseCats + incomeCats + transferCat)
         val cats = db.categories().getAll()
         val catByName = cats.associateBy { "${it.kind}:${it.name}" }
 
@@ -218,6 +225,25 @@ class Seeder(
         add(1, 19, 40, TxnKind.EXPENSE, "餐饮", "支付宝", 26.0, "晚餐", "日常")
         add(0, 8, 20, TxnKind.EXPENSE, "交通", "微信", 6.0, "地铁上班", "通勤")
         add(0, 12, 35, TxnKind.EXPENSE, "餐饮", "支付宝", 32.0, "午饭", "日常")
+
+        fun addTransfer(daysAgo: Int, hour: Int, minute: Int, from: String, to: String, yuan: Double, note: String) {
+            val date = today.minusDays(daysAgo.toLong())
+            txns += TransactionEntity(
+                amountCents = Math.round(yuan * 100.0),
+                kind = TxnKind.TRANSFER.name,
+                occurredAt = Dates.of(date, hour, minute),
+                categoryId = catByName.getValue("${TxnKind.TRANSFER.name}:转账").id,
+                accountId = acc(from),
+                note = note,
+                tags = "转账",
+                createdAt = now,
+                updatedAt = now,
+                transferToAccountId = acc(to),
+            )
+        }
+        addTransfer(2, 15, 10, "银行卡", "支付宝", 800.0, "转入支付宝备用")
+        addTransfer(6, 11, 30, "微信", "现金", 200.0, "取现")
+        addTransfer(20, 9, 0, "银行卡", "微信", 500.0, "转生活费")
 
         // Deduplicate identical timestamps a bit by keeping all; Room is fine.
         db.transactions().insertAll(txns.sortedBy { it.occurredAt })

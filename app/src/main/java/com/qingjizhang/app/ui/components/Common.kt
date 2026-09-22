@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -41,7 +42,8 @@ import com.qingjizhang.app.domain.TxnKind
 import com.qingjizhang.app.ui.theme.Expense
 import com.qingjizhang.app.ui.theme.Income
 import com.qingjizhang.app.ui.theme.InkMuted
-import com.qingjizhang.app.ui.theme.SurfaceCard
+import com.qingjizhang.app.ui.theme.Transfer
+import com.qingjizhang.app.ui.theme.TransferSoft
 import java.time.YearMonth
 
 @Composable
@@ -55,7 +57,7 @@ fun AppCard(
             onClick = onClick,
             modifier = modifier.fillMaxWidth(),
             shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
         ) {
             Column(Modifier.padding(16.dp), content = content)
@@ -64,7 +66,7 @@ fun AppCard(
         Card(
             modifier = modifier.fillMaxWidth(),
             shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
         ) {
             Column(Modifier.padding(16.dp), content = content)
@@ -112,11 +114,21 @@ fun MoneyText(cents: Long, kind: TxnKind? = null, large: Boolean = false) {
     val color = when (kind) {
         TxnKind.INCOME -> Income
         TxnKind.EXPENSE -> Expense
+        TxnKind.TRANSFER -> Transfer
         null -> if (cents >= 0) Income else Expense
     }
-    val value = if (kind == null) cents else if (kind == TxnKind.INCOME) cents else -cents
+    val value = when (kind) {
+        TxnKind.INCOME -> cents
+        TxnKind.EXPENSE -> -cents
+        TxnKind.TRANSFER -> cents
+        null -> cents
+    }
+    val withSign = when (kind) {
+        TxnKind.TRANSFER -> false
+        else -> kind != null || cents != 0L
+    }
     Text(
-        text = Money.formatYuan(value, withSign = kind != null || cents != 0L),
+        text = Money.formatYuan(value, withSign = withSign),
         color = color,
         fontWeight = FontWeight.SemiBold,
         fontSize = if (large) 22.sp else 16.sp,
@@ -125,6 +137,7 @@ fun MoneyText(cents: Long, kind: TxnKind? = null, large: Boolean = false) {
 
 @Composable
 fun TxnRow(txn: Txn, onClick: () -> Unit) {
+    val isTransfer = txn.kind == TxnKind.TRANSFER
     Row(
         Modifier
             .fillMaxWidth()
@@ -137,28 +150,43 @@ fun TxnRow(txn: Txn, onClick: () -> Unit) {
             Modifier
                 .size(42.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(txn.categoryColor).copy(alpha = 0.16f)),
+                .background(
+                    if (isTransfer) TransferSoft
+                    else Color(txn.categoryColor).copy(alpha = 0.16f),
+                ),
             contentAlignment = Alignment.Center,
         ) {
-            Text(txn.categoryEmoji.ifBlank { "•" }, fontSize = 18.sp)
+            Text(if (isTransfer) "🔁" else txn.categoryEmoji.ifBlank { "•" }, fontSize = 18.sp)
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ColorDot(txn.categoryColor)
+                ColorDot(if (isTransfer) Transfer.toArgb() else txn.categoryColor)
                 Spacer(Modifier.width(6.dp))
-                Text(txn.categoryName, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    if (isTransfer) "转账" else txn.categoryName,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = if (isTransfer) Transfer else Color.Unspecified,
+                )
             }
             val sub = buildString {
                 append(txn.dateTime.toLocalTime().toString().take(5))
                 append(" · ")
-                append(txn.accountName)
+                if (isTransfer) {
+                    append(txn.accountName.ifBlank { "账户" })
+                    append(" → ")
+                    append(txn.transferToAccountName.ifBlank { "账户" })
+                } else {
+                    append(txn.accountName)
+                }
                 if (txn.note.isNotBlank()) {
                     append(" · ")
                     append(txn.note)
                 }
             }
-            Text(sub, color = InkMuted, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(sub, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         if (!txn.receiptPath.isNullOrBlank()) {
             Text("📷", modifier = Modifier.padding(end = 6.dp))

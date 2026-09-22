@@ -21,7 +21,7 @@ import java.time.format.DateTimeParseException
 @Serializable
 data class BackupFile(
     val app: String = "轻记账",
-    val version: Int = 1,
+    val version: Int = 3,
     val exportedAt: String = "",
     val accounts: List<BackupAccount> = emptyList(),
     val categories: List<BackupCategory> = emptyList(),
@@ -68,6 +68,8 @@ data class BackupTxn(
     val createdAt: Long = 0,
     val updatedAt: Long = 0,
     val receiptPath: String? = null,
+    val transferToAccountId: Long? = null,
+    val transferToAccountName: String = "",
 )
 
 @Serializable
@@ -115,6 +117,7 @@ data class CsvRow(
     val occurredAt: Long,
     val amountCents: Long,
     val kind: TxnKind,
+    val toAccount: String = "",
 )
 
 enum class ImportMode { SKIP_DUPLICATES, IMPORT_ALL, REPLACE_ALL }
@@ -145,7 +148,7 @@ class BackupManager(
         val catById = snap.categories.associateBy { it.id }
         val accById = snap.accounts.associateBy { it.id }
         val file = BackupFile(
-            version = 2,
+            version = 3,
             exportedAt = Instant.now().toString(),
             accounts = snap.accounts.map {
                 BackupAccount(it.id, it.name, it.type, it.initialBalanceCents, it.colorArgb, it.archived, it.sortOrder)
@@ -168,6 +171,8 @@ class BackupManager(
                     createdAt = it.createdAt,
                     updatedAt = it.updatedAt,
                     receiptPath = it.receiptPath,
+                    transferToAccountId = it.transferToAccountId,
+                    transferToAccountName = it.transferToAccountId?.let { id -> accById[id]?.name }.orEmpty(),
                 )
             },
             budgets = snap.budgets.map {
@@ -203,10 +208,14 @@ class BackupManager(
         val accById = snap.accounts.associateBy { it.id }
         val zone = ZoneId.systemDefault()
         val sb = StringBuilder()
-        sb.appendLine("日期,时间,类型,金额,分类,账户,备注,标签")
+        sb.appendLine("日期,时间,类型,金额,分类,账户,备注,标签,转入账户")
         snap.transactions.sortedBy { it.occurredAt }.forEach { t ->
             val dt = Instant.ofEpochMilli(t.occurredAt).atZone(zone).toLocalDateTime()
-            val kind = if (t.kind == TxnKind.INCOME.name) "收入" else "支出"
+            val kind = when (t.kind) {
+                TxnKind.INCOME.name -> "收入"
+                TxnKind.TRANSFER.name -> "转账"
+                else -> "支出"
+            }
             val line = listOf(
                 dt.toLocalDate().toString(),
                 dt.toLocalTime().withSecond(0).withNano(0).toString().take(5),
@@ -216,6 +225,7 @@ class BackupManager(
                 accById[t.accountId]?.name.orEmpty(),
                 t.note,
                 t.tags,
+                t.transferToAccountId?.let { accById[it]?.name }.orEmpty(),
             ).joinToString(",") { csvEscape(it) }
             sb.appendLine(line)
         }
@@ -228,7 +238,7 @@ class BackupManager(
         val existingKeys = existing.transactions.map { dupKey(it.occurredAt, it.amountCents, it.kind, it.note) }.toSet()
         val dup = backup.transactions.count { dupKey(it.occurredAt, it.amountCents, it.kind, it.note) in existingKeys }
         val warnings = buildList {
-            if (backup.version > 2) add("备份版本较新，部分字段可能被忽略")
+            if (backup.version > 3) add("备份版本较新，部分字段可能被忽略")
             if (backup.transactions.isEmpty()) add("备份中没有流水")
             add("账户 ${backup.accounts.size} · 分类 ${backup.categories.size} · 预算 ${backup.budgets.size} · 周期 ${backup.recurringRules.size}")
         }
@@ -271,7 +281,23 @@ class BackupManager(
         if (mode == ImportMode.REPLACE_ALL) {
             repo.clearAll()
         }
-        val catMap = ensureCategories(backup.categories)
+        val incomingCats = backup.categories.toMutableList()
+        if (backup.transactions.any {
+                TxnKind.fromRaw(it.kind) == TxnKind.TRANSFER ||
+                    it.transferToAccountId != null ||
+                    it.transferToAccountName.isNotBlank()
+            }
+        ) {
+            if (incomingCats.none { it.kind == TxnKind.TRANSFER.name || it.name == "转账" }) {
+                incomingCats += BackupCategory(
+                    name = "转账",
+                    kind = TxnKind.TRANSFER.name,
+                    colorArgb = 0xFF3D7EA6.toInt(),
+                    emoji = "🔁",
+                )
+            }
+        }
+        val catMap = ensureCategories(incomingCats)
         val accMap = ensureAccounts(backup.accounts)
         val existing = repo.snapshot()
         val existingKeys = existing.transactions.map { dupKey(it.occurredAt, it.amountCents, it.kind, it.note) }.toSet()
@@ -290,14 +316,30 @@ class BackupManager(
                 backup.accounts.find { it.id == t.accountId }?.name.orEmpty()
             }
             val kind = TxnKind.fromRaw(t.kind)
-            val categoryId = catMap[kind.name + ":" + categoryName]
-                ?: catMap[categoryName]
-                ?: catMap.values.firstOrNull()
-                ?: return@mapNotNull null
+            val resolvedKind = if (t.transferToAccountId != null || t.transferToAccountName.isNotBlank()) {
+                TxnKind.TRANSFER
+            } else kind
+            val categoryId = if (resolvedKind == TxnKind.TRANSFER) {
+                catMap[TxnKind.TRANSFER.name + ":转账"]
+                    ?: catMap["转账"]
+                    ?: catMap.values.firstOrNull()
+                    ?: return@mapNotNull null
+            } else {
+                catMap[resolvedKind.name + ":" + categoryName]
+                    ?: catMap[categoryName]
+                    ?: catMap.values.firstOrNull()
+                    ?: return@mapNotNull null
+            }
             val accountId = accMap[accountName] ?: accMap.values.firstOrNull() ?: return@mapNotNull null
+            val toAccountId = if (resolvedKind == TxnKind.TRANSFER) {
+                accMap[t.transferToAccountName].takeIf { t.transferToAccountName.isNotBlank() }
+                    ?: t.transferToAccountId?.let { id ->
+                        backup.accounts.find { it.id == id }?.let { accMap[it.name] }
+                    }
+            } else null
             TransactionEntity(
                 amountCents = kotlin.math.abs(t.amountCents),
-                kind = kind.name,
+                kind = resolvedKind.name,
                 occurredAt = t.occurredAt,
                 categoryId = categoryId,
                 accountId = accountId,
@@ -306,6 +348,7 @@ class BackupManager(
                 createdAt = t.createdAt.takeIf { it > 0 } ?: now,
                 updatedAt = now,
                 receiptPath = t.receiptPath,
+                transferToAccountId = toAccountId,
             )
         }
         repo.insertTransactions(toInsert)
@@ -356,12 +399,25 @@ class BackupManager(
         }
         val neededCats = rows.map {
             BackupCategory(
-                name = it.category.ifBlank { "其他" },
+                name = it.category.ifBlank { if (it.kind == TxnKind.TRANSFER) "转账" else "其他" },
                 kind = it.kind.name,
-                colorArgb = if (it.kind == TxnKind.INCOME) Palette.income.first() else Palette.expense.last(),
+                colorArgb = when (it.kind) {
+                    TxnKind.INCOME -> Palette.income.first()
+                    TxnKind.TRANSFER -> 0xFF3D7EA6.toInt()
+                    else -> Palette.expense.last()
+                },
+                emoji = if (it.kind == TxnKind.TRANSFER) "🔁" else "",
             )
         }
-        val neededAccs = rows.map {
+        val neededAccs = rows.flatMap {
+            listOf(it.account, it.toAccount)
+        }.filter { it.isNotBlank() }.distinct().map {
+            BackupAccount(
+                name = it.ifBlank { "现金" },
+                type = AccountType.fromRaw(it).name,
+                colorArgb = Palette.accounts.first(),
+            )
+        } + rows.map {
             BackupAccount(
                 name = it.account.ifBlank { "现金" },
                 type = AccountType.fromRaw(it.account).name,
@@ -379,8 +435,14 @@ class BackupManager(
             ) return@mapNotNull null
             val catName = row.category.ifBlank { "其他" }
             val accName = row.account.ifBlank { "现金" }
-            val categoryId = catMap[row.kind.name + ":" + catName] ?: catMap[catName] ?: return@mapNotNull null
+            val categoryId = if (row.kind == TxnKind.TRANSFER) {
+                catMap[TxnKind.TRANSFER.name + ":转账"] ?: catMap["转账"] ?: catMap[row.kind.name + ":" + catName]
+                    ?: catMap[catName] ?: return@mapNotNull null
+            } else {
+                catMap[row.kind.name + ":" + catName] ?: catMap[catName] ?: return@mapNotNull null
+            }
             val accountId = accMap[accName] ?: return@mapNotNull null
+            val toAccountId = row.toAccount.takeIf { it.isNotBlank() }?.let { accMap[it] }
             TransactionEntity(
                 amountCents = row.amountCents,
                 kind = row.kind.name,
@@ -391,6 +453,7 @@ class BackupManager(
                 tags = row.tags,
                 createdAt = now,
                 updatedAt = now,
+                transferToAccountId = if (row.kind == TxnKind.TRANSFER) toAccountId else null,
             )
         }
         repo.insertTransactions(toInsert)
@@ -449,6 +512,7 @@ class BackupManager(
             val iAcc = idx("账户", "account", "账号", "钱包")
             val iNote = idx("备注", "note", "memo", "说明", "描述")
             val iTags = idx("标签", "tags", "tag")
+            val iToAcc = idx("转入账户", "toaccount", "转入", "对方账户")
             val hasHeader = header.any { it in setOf("日期", "date", "金额", "amount", "分类", "category") }
             val start = if (hasHeader) 1 else 0
             val rows = mutableListOf<CsvRow>()
@@ -462,6 +526,7 @@ class BackupManager(
                 val occurredAt = parseDateTime(dateRaw, timeRaw) ?: continue
                 val typeRaw = col(iType)
                 val kind = when {
+                    typeRaw.contains("转") || typeRaw.equals("transfer", true) -> TxnKind.TRANSFER
                     typeRaw.contains("收") || typeRaw.equals("income", true) || typeRaw.equals("in", true) -> TxnKind.INCOME
                     typeRaw.contains("支") || typeRaw.equals("expense", true) || typeRaw.equals("out", true) -> TxnKind.EXPENSE
                     amountCents < 0 -> TxnKind.EXPENSE
@@ -481,6 +546,7 @@ class BackupManager(
                     occurredAt = occurredAt,
                     amountCents = absAmount,
                     kind = kind,
+                    toAccount = if (iToAcc >= 0) col(iToAcc) else "",
                 )
             }
             return rows

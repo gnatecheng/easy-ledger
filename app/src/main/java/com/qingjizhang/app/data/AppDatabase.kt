@@ -15,7 +15,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         BudgetEntity::class,
         RecurringRuleEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -58,9 +58,23 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE transactions ADD COLUMN transferToAccountId INTEGER")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_transferToAccountId ON transactions(transferToAccountId)")
+                db.execSQL(
+                    """
+                    INSERT INTO categories (name, kind, colorArgb, emoji, archived, sortOrder)
+                    SELECT '转账', 'TRANSFER', ${0xFF3D7EA6.toInt()}, '🔁', 0, 999
+                    WHERE NOT EXISTS (SELECT 1 FROM categories WHERE kind = 'TRANSFER')
+                    """.trimIndent(),
+                )
+            }
+        }
+
         fun create(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, "qingjizhang.db")
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
     }
 }
