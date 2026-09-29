@@ -45,11 +45,14 @@ import com.qingjizhang.app.domain.BudgetStatus
 import com.qingjizhang.app.domain.Category
 import com.qingjizhang.app.domain.CategorySlice
 import com.qingjizhang.app.domain.Dates
-import com.qingjizhang.app.domain.Money
 import com.qingjizhang.app.domain.MonthSummary
 import com.qingjizhang.app.domain.Txn
 import com.qingjizhang.app.domain.TxnKind
+import com.qingjizhang.app.R
 import com.qingjizhang.app.ui.LocalApp
+import com.qingjizhang.app.ui.i18n.AppFormatters
+import com.qingjizhang.app.ui.i18n.displayName
+import com.qingjizhang.app.ui.i18n.localizedCategoryName
 import com.qingjizhang.app.ui.components.AppCard
 import com.qingjizhang.app.ui.components.Banner
 import com.qingjizhang.app.ui.components.BudgetBar
@@ -63,8 +66,8 @@ import com.qingjizhang.app.ui.components.TxnRow
 import com.qingjizhang.app.ui.share.MonthShare
 import com.qingjizhang.app.ui.theme.ExpenseSoft
 import com.qingjizhang.app.ui.theme.IncomeSoft
-import com.qingjizhang.app.ui.theme.InkMuted
 import com.qingjizhang.app.ui.theme.Over
+import androidx.compose.ui.res.stringResource
 import com.qingjizhang.app.ui.theme.OverSoft
 import com.qingjizhang.app.ui.theme.Warn
 import com.qingjizhang.app.ui.theme.WarnSoft
@@ -177,10 +180,10 @@ fun HomeScreen(
                     containerColor = com.qingjizhang.app.ui.theme.Transfer,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {
-                    Icon(Icons.Outlined.SwapHoriz, contentDescription = "转账")
+                    Icon(Icons.Outlined.SwapHoriz, contentDescription = stringResource(R.string.cd_transfer))
                 }
                 FloatingActionButton(onClick = onQuickAdd) {
-                    Icon(Icons.Default.Add, contentDescription = "记一笔")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_quick_add))
                 }
             }
         },
@@ -191,12 +194,20 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                Text("轻记账", style = MaterialTheme.typography.headlineMedium)
-                Text("把每一笔都记清楚", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium)
+                Text(
+                    stringResource(R.string.home_tagline),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
                 MonthSwitcher(ui.month, onChange = { vm.month.value = it })
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = { MonthShare.shareImage(context, ui.summary, ui.slices) }) { Text("分享月报") }
-                    TextButton(onClick = { MonthShare.sharePdf(context, ui.summary, ui.slices) }) { Text("导出 PDF") }
+                    TextButton(onClick = { MonthShare.shareImage(context, ui.summary, ui.slices) }) {
+                        Text(stringResource(R.string.share_month_report))
+                    }
+                    TextButton(onClick = { MonthShare.sharePdf(context, ui.summary, ui.slices) }) {
+                        Text(stringResource(R.string.export_pdf))
+                    }
                 }
             }
             items(alerts, key = { it.key }) { alert ->
@@ -213,20 +224,20 @@ fun HomeScreen(
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    MiniStat("本月支出", ui.summary.expenseCents, TxnKind.EXPENSE, ui.prev.expenseCents, Modifier.weight(1f))
-                    MiniStat("本月收入", ui.summary.incomeCents, TxnKind.INCOME, ui.prev.incomeCents, Modifier.weight(1f))
+                    MiniStat(stringResource(R.string.month_expense), ui.summary.expenseCents, TxnKind.EXPENSE, ui.prev.expenseCents, Modifier.weight(1f))
+                    MiniStat(stringResource(R.string.month_income), ui.summary.incomeCents, TxnKind.INCOME, ui.prev.incomeCents, Modifier.weight(1f))
                 }
                 Spacer(Modifier.height(10.dp))
                 AppCard {
-                    Text("结余", color = InkMuted)
+                    Text(stringResource(R.string.balance), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     MoneyText(ui.summary.balanceCents, large = true)
                     DeltaChip(ui.summary.balanceCents, ui.prev.balanceCents)
                     if (ui.summary.transferCents > 0) {
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            "本月转账 ${Money.formatYuan(ui.summary.transferCents)}（不计入收支）",
-                            color = InkMuted,
+                            stringResource(R.string.month_transfer_note, AppFormatters.formatYuan(ui.summary.transferCents)),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyMedium,
                         )
                     }
@@ -235,13 +246,13 @@ fun HomeScreen(
             if (ui.budgetStatuses.isNotEmpty()) {
                 item {
                     AppCard(onClick = onOpenBudgets) {
-                        SectionTitle("预算进度")
+                        SectionTitle(stringResource(R.string.budget_progress))
                         ui.budgetStatuses.take(4).forEach { BudgetBar(it) }
                     }
                 }
             }
             item {
-                Text("账户", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.accounts), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ui.accounts.forEach { acc ->
@@ -253,8 +264,8 @@ fun HomeScreen(
                                     ColorDot(acc.colorArgb)
                                     Spacer(Modifier.width(6.dp))
                                     Column {
-                                        Text(acc.name)
-                                        Text(Money.formatYuan(acc.balanceCents, withSign = true), style = MaterialTheme.typography.labelSmall)
+                                        Text(acc.displayName())
+                                        Text(AppFormatters.formatYuan(acc.balanceCents, withSign = true), style = MaterialTheme.typography.labelSmall)
                                     }
                                 }
                             },
@@ -263,12 +274,12 @@ fun HomeScreen(
                 }
             }
             item {
-                SectionTitle("本月流水") {
-                    TextButton(onClick = onOpenTxns) { Text("全部") }
+                SectionTitle(stringResource(R.string.month_txns)) {
+                    TextButton(onClick = onOpenTxns) { Text(stringResource(R.string.action_all)) }
                 }
             }
             if (ui.recent.isEmpty()) {
-                item { EmptyHint("这个月还没有记账，点右下角记一笔") }
+                item { EmptyHint(stringResource(R.string.empty_month_txns)) }
             } else {
                 items(ui.recent, key = { it.id }) { txn ->
                     AppCard(onClick = { onOpenTxn(txn.id) }) {
@@ -289,7 +300,7 @@ private fun MiniStat(
     modifier: Modifier = Modifier,
 ) {
     AppCard(modifier) {
-        Text(title, color = InkMuted)
+        Text(title, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))
         MoneyText(cents, kind, large = true)
         DeltaChip(cents, prev)
@@ -305,25 +316,38 @@ object FinanceAlerts {
         val content: androidx.compose.ui.graphics.Color,
     )
 
+    @Composable
     fun build(ui: HomeUi, dismissed: Set<String>): List<Item> {
         val items = mutableListOf<Item>()
+        val totalBudgetLabel = stringResource(R.string.budget_total_label)
         ui.budgetStatuses.filter { it.over }.forEach { s ->
             val key = "over-${s.budget.id}"
             if (key !in dismissed) {
+                val name = s.category?.displayName() ?: totalBudgetLabel
                 items += Item(
-                    key, "预算已超支",
-                    "${s.category?.name ?: "总预算"}本月已花 ${Money.formatYuan(s.spentCents)}，超出 ${Money.formatYuan(s.spentCents - s.budget.amountCents)}",
-                    OverSoft, Over,
+                    key,
+                    stringResource(R.string.alert_budget_over_title),
+                    stringResource(
+                        R.string.alert_budget_over_body,
+                        name,
+                        AppFormatters.formatYuan(s.spentCents),
+                        AppFormatters.formatYuan(s.spentCents - s.budget.amountCents),
+                    ),
+                    OverSoft,
+                    Over,
                 )
             }
         }
         ui.budgetStatuses.filter { it.warn }.forEach { s ->
             val key = "warn-${s.budget.id}"
             if (key !in dismissed) {
+                val name = s.category?.displayName() ?: totalBudgetLabel
                 items += Item(
-                    key, "预算即将用完",
-                    "${s.category?.name ?: "总预算"}已使用 ${(s.ratio * 100).toInt()}%，请留意开支",
-                    WarnSoft, Warn,
+                    key,
+                    stringResource(R.string.alert_budget_warn_title),
+                    stringResource(R.string.alert_budget_warn_body, name, (s.ratio * 100).toInt()),
+                    WarnSoft,
+                    Warn,
                 )
             }
         }
@@ -331,9 +355,16 @@ object FinanceAlerts {
             val key = "large-${t.id}"
             if (key !in dismissed) {
                 items += Item(
-                    key, "大额支出提醒",
-                    "${t.categoryName} ${Money.formatYuan(t.amountCents)}（阈值 ${Money.formatYuan(ui.settings.largeTxnThresholdCents)}）",
-                    ExpenseSoft, com.qingjizhang.app.ui.theme.Expense,
+                    key,
+                    stringResource(R.string.alert_large_txn_title),
+                    stringResource(
+                        R.string.alert_large_txn_body,
+                        localizedCategoryName(t.categoryName),
+                        AppFormatters.formatYuan(t.amountCents),
+                        AppFormatters.formatYuan(ui.settings.largeTxnThresholdCents),
+                    ),
+                    ExpenseSoft,
+                    com.qingjizhang.app.ui.theme.Expense,
                 )
             }
         }
@@ -350,9 +381,11 @@ object FinanceAlerts {
                 ) < 1
             if (gap >= days && !recentlyDismissed) {
                 items += Item(
-                    "nudge", "好久没记账了",
-                    "已经 $gap 天没有新的记录，花 10 秒补一笔吧",
-                    IncomeSoft, com.qingjizhang.app.ui.theme.TealDark,
+                    "nudge",
+                    stringResource(R.string.alert_nudge_title),
+                    stringResource(R.string.alert_nudge_body, gap.toInt()),
+                    IncomeSoft,
+                    com.qingjizhang.app.ui.theme.TealDark,
                 )
             }
         }

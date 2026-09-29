@@ -79,8 +79,13 @@ import com.qingjizhang.app.domain.Money
 import com.qingjizhang.app.domain.Txn
 import com.qingjizhang.app.domain.TxnKind
 import com.qingjizhang.app.domain.parseTags
+import com.qingjizhang.app.R
 import com.qingjizhang.app.ui.LocalApp
 import com.qingjizhang.app.ui.components.AppCard
+import com.qingjizhang.app.ui.i18n.AppFormatters
+import com.qingjizhang.app.ui.i18n.displayName
+import com.qingjizhang.app.ui.i18n.localizedLabel
+import androidx.compose.ui.res.stringResource
 import com.qingjizhang.app.ui.components.ColorDot
 import com.qingjizhang.app.ui.components.EmptyHint
 import com.qingjizhang.app.ui.components.MonthSwitcher
@@ -217,10 +222,10 @@ fun TransactionListScreen(
                     containerColor = Transfer,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {
-                    Icon(Icons.Outlined.SwapHoriz, contentDescription = "转账")
+                    Icon(Icons.Outlined.SwapHoriz, contentDescription = stringResource(R.string.cd_transfer))
                 }
                 FloatingActionButton(onClick = onQuickAdd) {
-                    Icon(Icons.Default.Add, contentDescription = "记一笔")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_quick_add))
                 }
             }
         },
@@ -231,18 +236,18 @@ fun TransactionListScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
-                Text("明细", style = MaterialTheme.typography.headlineMedium)
+                Text(stringResource(R.string.txns_title), style = MaterialTheme.typography.headlineMedium)
                 MonthSwitcher(ui.month) { vm.month.value = it }
                 OutlinedTextField(
                     value = ui.query,
                     onValueChange = { vm.query.value = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("搜索备注、标签") },
+                    placeholder = { Text(stringResource(R.string.search_hint)) },
                     leadingIcon = { Icon(Icons.Default.Search, null) },
                     trailingIcon = {
                         if (ui.query.isNotBlank()) {
                             IconButton(onClick = { vm.query.value = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = "清除搜索")
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_search))
                             }
                         }
                     },
@@ -250,57 +255,63 @@ fun TransactionListScreen(
                 )
                 Spacer(Modifier.height(8.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selected = ui.kind == null, onClick = { vm.kind.value = null }, label = { Text("全部") })
-                    FilterChip(selected = ui.kind == TxnKind.EXPENSE, onClick = { vm.kind.value = TxnKind.EXPENSE }, label = { Text("支出") })
-                    FilterChip(selected = ui.kind == TxnKind.INCOME, onClick = { vm.kind.value = TxnKind.INCOME }, label = { Text("收入") })
-                    FilterChip(selected = ui.kind == TxnKind.TRANSFER, onClick = { vm.kind.value = TxnKind.TRANSFER }, label = { Text("转账") })
+                    FilterChip(selected = ui.kind == null, onClick = { vm.kind.value = null }, label = { Text(stringResource(R.string.filter_all)) })
+                    FilterChip(selected = ui.kind == TxnKind.EXPENSE, onClick = { vm.kind.value = TxnKind.EXPENSE }, label = { Text(stringResource(R.string.txn_expense)) })
+                    FilterChip(selected = ui.kind == TxnKind.INCOME, onClick = { vm.kind.value = TxnKind.INCOME }, label = { Text(stringResource(R.string.txn_income)) })
+                    FilterChip(selected = ui.kind == TxnKind.TRANSFER, onClick = { vm.kind.value = TxnKind.TRANSFER }, label = { Text(stringResource(R.string.txn_transfer)) })
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = { vm.filtersOpen.value = !ui.filtersOpen }) {
                         Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text(if (ui.filtersOpen) "收起筛选" else "更多筛选")
+                        Text(
+                            stringResource(if (ui.filtersOpen) R.string.filters_collapse else R.string.filters_expand),
+                        )
                     }
                     if (ui.hasFilters) {
-                        TextButton(onClick = { vm.clearFilters() }) { Text("清除筛选") }
+                        TextButton(onClick = { vm.clearFilters() }) { Text(stringResource(R.string.clear_filters)) }
                     }
                     Spacer(Modifier.weight(1f))
-                    Text("${ui.items.size} 笔", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        stringResource(R.string.txn_count, ui.items.size),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
                 }
                 if (ui.filtersOpen) {
                     if (ui.kind != TxnKind.TRANSFER) {
-                        Text("分类", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.filter_category), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(4.dp))
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilterChip(selected = ui.categoryId == null, onClick = { vm.categoryId.value = null }, label = { Text("全部分类") })
+                            FilterChip(selected = ui.categoryId == null, onClick = { vm.categoryId.value = null }, label = { Text(stringResource(R.string.filter_all_categories)) })
                             ui.categories.filter { ui.kind == null || it.kind == ui.kind }.forEach { c ->
                                 FilterChip(
                                     selected = ui.categoryId == c.id,
                                     onClick = { vm.categoryId.value = if (ui.categoryId == c.id) null else c.id },
-                                    label = { Text("${c.emoji} ${c.name}") },
+                                    label = { Text("${c.emoji} ${c.displayName()}") },
                                 )
                             }
                         }
                         Spacer(Modifier.height(8.dp))
                     }
-                    Text("账户", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.accounts), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(selected = ui.accountId == null, onClick = { vm.accountId.value = null }, label = { Text("全部账户") })
+                        FilterChip(selected = ui.accountId == null, onClick = { vm.accountId.value = null }, label = { Text(stringResource(R.string.filter_all_accounts)) })
                         ui.accounts.forEach { acc ->
                             FilterChip(
                                 selected = ui.accountId == acc.id,
                                 onClick = { vm.accountId.value = if (ui.accountId == acc.id) null else acc.id },
-                                label = { Text(acc.name) },
+                                label = { Text(acc.displayName()) },
                             )
                         }
                     }
                     if (ui.tags.isNotEmpty()) {
                         Spacer(Modifier.height(8.dp))
-                        Text("标签", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.filter_tags), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(4.dp))
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilterChip(selected = ui.tag == null, onClick = { vm.tag.value = null }, label = { Text("全部标签") })
+                            FilterChip(selected = ui.tag == null, onClick = { vm.tag.value = null }, label = { Text(stringResource(R.string.filter_all_tags)) })
                             ui.tags.forEach { t ->
                                 FilterChip(
                                     selected = ui.tag == t,
@@ -311,15 +322,15 @@ fun TransactionListScreen(
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    Text("金额范围", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.filter_amount_range), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
                             value = ui.minAmount,
                             onValueChange = { vm.minAmount.value = it.filter { ch -> ch.isDigit() || ch == '.' } },
                             modifier = Modifier.weight(1f),
-                            label = { Text("最低") },
-                            prefix = { Text("¥") },
+                            label = { Text(stringResource(R.string.filter_min)) },
+                            prefix = { Text(stringResource(R.string.currency_yuan)) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true,
                         )
@@ -328,8 +339,8 @@ fun TransactionListScreen(
                             value = ui.maxAmount,
                             onValueChange = { vm.maxAmount.value = it.filter { ch -> ch.isDigit() || ch == '.' } },
                             modifier = Modifier.weight(1f),
-                            label = { Text("最高") },
-                            prefix = { Text("¥") },
+                            label = { Text(stringResource(R.string.filter_max)) },
+                            prefix = { Text(stringResource(R.string.currency_yuan)) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true,
                         )
@@ -337,7 +348,13 @@ fun TransactionListScreen(
                 }
             }
             if (ui.dayGroups.isEmpty()) {
-                item { EmptyHint(if (ui.hasFilters) "没有符合条件的流水，试试清除筛选" else "没有符合条件的流水") }
+                item {
+                    EmptyHint(
+                        stringResource(
+                            if (ui.hasFilters) R.string.empty_txns_filtered else R.string.empty_txns,
+                        ),
+                    )
+                }
             }
             ui.dayGroups.forEach { (day, list) ->
                 item(key = "h-$day") {
@@ -348,11 +365,15 @@ fun TransactionListScreen(
                         Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(day.format(Dates.dayCn), fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                        Text(AppFormatters.monthDayWeek(day), fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
                         if (ledger.isNotEmpty()) MoneyText(sub)
                         if (transferSum > 0) {
                             if (ledger.isNotEmpty()) Spacer(Modifier.width(8.dp))
-                            Text("转账 ${Money.formatYuan(transferSum)}", color = Transfer, style = MaterialTheme.typography.labelMedium)
+                            Text(
+                                stringResource(R.string.day_transfer_sum, AppFormatters.formatYuan(transferSum)),
+                                color = Transfer,
+                                style = MaterialTheme.typography.labelMedium,
+                            )
                         }
                     }
                 }
@@ -451,7 +472,7 @@ private fun TransactionForm(
     var showDate by remember { mutableStateOf(false) }
     var showTime by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var errorRes by remember { mutableStateOf<Int?>(null) }
     var receiptPath by remember { mutableStateOf<String?>(null) }
     var captureName by remember { mutableStateOf<String?>(null) }
     val existingId = txnId.takeIf { it > 0 }
@@ -516,21 +537,21 @@ private fun TransactionForm(
                             }
                         },
                         shape = SegmentedButtonDefaults.itemShape(index, kinds.size),
-                    ) { Text(k.label) }
+                    ) { Text(k.localizedLabel()) }
                 }
             }
             OutlinedTextField(
                 value = amount,
                 onValueChange = { amount = it.filter { ch -> ch.isDigit() || ch == '.' } },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("金额") },
-                prefix = { Text("¥") },
+                label = { Text(stringResource(R.string.field_amount_label)) },
+                prefix = { Text(stringResource(R.string.currency_yuan)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
                 textStyle = MaterialTheme.typography.headlineMedium,
             )
             if (isTransfer) {
-                Text("转出账户", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.from_account), style = MaterialTheme.typography.titleMedium)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     activeAccs.forEach { a ->
                         FilterChip(
@@ -540,13 +561,13 @@ private fun TransactionForm(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     ColorDot(a.colorArgb)
                                     Spacer(Modifier.width(6.dp))
-                                    Text(a.name)
+                                    Text(a.displayName())
                                 }
                             },
                         )
                     }
                 }
-                Text("转入账户", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.to_account), style = MaterialTheme.typography.titleMedium)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     activeAccs.forEach { a ->
                         FilterChip(
@@ -556,14 +577,14 @@ private fun TransactionForm(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     ColorDot(a.colorArgb)
                                     Spacer(Modifier.width(6.dp))
-                                    Text(a.name)
+                                    Text(a.displayName())
                                 }
                             },
                         )
                     }
                 }
             } else {
-                Text("分类", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.filter_category), style = MaterialTheme.typography.titleMedium)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     filteredCats.forEach { c ->
                         FilterChip(
@@ -573,13 +594,13 @@ private fun TransactionForm(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     ColorDot(c.colorArgb)
                                     Spacer(Modifier.width(6.dp))
-                                    Text("${c.emoji} ${c.name}")
+                                    Text("${c.emoji} ${c.displayName()}")
                                 }
                             },
                         )
                     }
                 }
-                Text("账户", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.accounts), style = MaterialTheme.typography.titleMedium)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     activeAccs.forEach { a ->
                         FilterChip(
@@ -589,7 +610,7 @@ private fun TransactionForm(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     ColorDot(a.colorArgb)
                                     Spacer(Modifier.width(6.dp))
-                                    Text(a.name)
+                                    Text(a.displayName())
                                 }
                             },
                         )
@@ -598,31 +619,36 @@ private fun TransactionForm(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { showDate = true }, modifier = Modifier.weight(1f)) {
-                    Text(date.toString())
+                    Text(stringResource(R.string.pick_date))
                 }
                 OutlinedButton(onClick = { showTime = true }, modifier = Modifier.weight(1f)) {
-                    Text(time.toString().take(5))
+                    Text(stringResource(R.string.pick_time))
                 }
             }
-            OutlinedTextField(value = note, onValueChange = { note = it }, modifier = Modifier.fillMaxWidth(), label = { Text("备注（可选）") })
+            OutlinedTextField(
+                value = note,
+                onValueChange = { note = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(R.string.txn_note_optional)) },
+            )
             if (!isTransfer) {
                 OutlinedTextField(
                     value = tags,
                     onValueChange = { tags = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("标签（逗号分隔）") },
-                    placeholder = { Text("日常，通勤") },
+                    label = { Text(stringResource(R.string.txn_tags_optional)) },
+                    placeholder = { Text(stringResource(R.string.txn_tags_placeholder)) },
                 )
-                Text("收据照片", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.receipt_photo), style = MaterialTheme.typography.titleMedium)
                 val thumb = remember(receiptPath) { receipts.decodeThumb(receiptPath, 320) }
                 if (thumb != null) {
                     Image(
                         bitmap = thumb.asImageBitmap(),
-                        contentDescription = "收据缩略图",
+                        contentDescription = stringResource(R.string.receipt_thumb_cd),
                         modifier = Modifier.fillMaxWidth().height(140.dp).clip(RoundedCornerShape(12.dp)),
                     )
                 } else {
-                    Text("未添加收据，可拍照或从相册选择，照片只保存在本机。", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.receipt_hint), color = InkMuted, style = MaterialTheme.typography.bodyMedium)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(
@@ -632,29 +658,31 @@ private fun TransactionForm(
                             takePicture.launch(uri)
                         },
                         modifier = Modifier.weight(1f),
-                    ) { Text("拍照") }
-                    OutlinedButton(onClick = { pickGallery.launch("image/*") }, modifier = Modifier.weight(1f)) { Text("相册") }
+                    ) { Text(stringResource(R.string.take_photo)) }
+                    OutlinedButton(onClick = { pickGallery.launch("image/*") }, modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.pick_gallery))
+                    }
                 }
                 if (receiptPath != null) {
                     TextButton(onClick = {
                         receipts.delete(receiptPath)
                         receiptPath = null
-                    }) { Text("移除收据") }
+                    }) { Text(stringResource(R.string.remove_receipt)) }
                 }
             }
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            errorRes?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
             Button(
                 onClick = {
                     val cents = Money.parseYuan(amount)
                     when {
-                        cents == null || cents <= 0 -> error = "请输入有效金额"
-                        isTransfer && accountId == 0L -> error = "请选择转出账户"
-                        isTransfer && toAccountId == 0L -> error = "请选择转入账户"
-                        isTransfer && accountId == toAccountId -> error = "转出和转入账户不能相同"
-                        !isTransfer && categoryId == 0L -> error = "请选择分类"
-                        !isTransfer && accountId == 0L -> error = "请选择账户"
+                        cents == null || cents <= 0 -> errorRes = R.string.error_invalid_amount
+                        isTransfer && accountId == 0L -> errorRes = R.string.error_pick_from_account
+                        isTransfer && toAccountId == 0L -> errorRes = R.string.error_pick_to_account
+                        isTransfer && accountId == toAccountId -> errorRes = R.string.error_same_accounts
+                        !isTransfer && categoryId == 0L -> errorRes = R.string.error_pick_category
+                        !isTransfer && accountId == 0L -> errorRes = R.string.error_pick_account
                         else -> {
-                            error = null
+                            errorRes = null
                             val occurred = Dates.of(date, time.hour, time.minute)
                             vm.save(
                                 existingId, cents, kind, occurred, categoryId, accountId, note,
@@ -667,10 +695,16 @@ private fun TransactionForm(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text(if (existingId == null) "保存" else "更新") }
+            ) {
+                Text(
+                    stringResource(if (existingId == null) R.string.action_save else R.string.action_update),
+                )
+            }
             if (existingId != null) {
                 OutlinedButton(onClick = { confirmDelete = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(if (isTransfer) "删除这笔转账" else "删除这笔流水")
+                    Text(
+                        stringResource(if (isTransfer) R.string.delete_transfer else R.string.delete_txn),
+                    )
                 }
             }
             if (asSheet) Spacer(Modifier.height(24.dp))
@@ -680,7 +714,7 @@ private fun TransactionForm(
     if (asSheet) {
         Column {
             Text(
-                if (isTransfer) "账户转账" else "记一笔",
+                stringResource(if (isTransfer) R.string.account_transfer else R.string.txn_new),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
@@ -692,17 +726,19 @@ private fun TransactionForm(
                 TopAppBar(
                     title = {
                         Text(
-                            when {
-                                existingId == null && isTransfer -> "账户转账"
-                                existingId == null -> "记一笔"
-                                isTransfer -> "编辑转账"
-                                else -> "编辑流水"
-                            },
+                            stringResource(
+                                when {
+                                    existingId == null && isTransfer -> R.string.account_transfer
+                                    existingId == null -> R.string.txn_new
+                                    isTransfer -> R.string.edit_transfer
+                                    else -> R.string.edit_txn
+                                },
+                            ),
                         )
                     },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                         }
                     },
                 )
@@ -724,9 +760,9 @@ private fun TransactionForm(
                         date = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
                     }
                     showDate = false
-                }) { Text("确定") }
+                }) { Text(stringResource(R.string.action_confirm)) }
             },
-            dismissButton = { TextButton(onClick = { showDate = false }) { Text("取消") } },
+            dismissButton = { TextButton(onClick = { showDate = false }) { Text(stringResource(R.string.action_cancel)) } },
         ) { DatePicker(state = state) }
     }
     if (showTime) {
@@ -737,21 +773,29 @@ private fun TransactionForm(
                 TextButton(onClick = {
                     time = LocalTime.of(state.hour, state.minute)
                     showTime = false
-                }) { Text("确定") }
+                }) { Text(stringResource(R.string.action_confirm)) }
             },
-            dismissButton = { TextButton(onClick = { showTime = false }) { Text("取消") } },
+            dismissButton = { TextButton(onClick = { showTime = false }) { Text(stringResource(R.string.action_cancel)) } },
             text = { TimePicker(state = state) },
         )
     }
     if (confirmDelete && existingId != null) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text(if (isTransfer) "删除这笔转账？" else "删除这笔流水？") },
-            text = { Text(if (isTransfer) "删除后两端账户余额会一并还原。" else "删除后无法恢复。") },
-            confirmButton = {
-                TextButton(onClick = { vm.delete(existingId, onBack) }) { Text("删除") }
+            title = {
+                Text(
+                    stringResource(if (isTransfer) R.string.delete_transfer_title else R.string.delete_txn_title_short),
+                )
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("取消") } },
+            text = {
+                Text(
+                    stringResource(if (isTransfer) R.string.delete_transfer_body else R.string.delete_txn_body_short),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { vm.delete(existingId, onBack) }) { Text(stringResource(R.string.action_delete)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
 }

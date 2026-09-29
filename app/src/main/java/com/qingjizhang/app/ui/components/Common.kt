@@ -31,17 +31,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.qingjizhang.app.domain.Dates
-import com.qingjizhang.app.domain.Money
+import com.qingjizhang.app.R
 import com.qingjizhang.app.domain.Txn
 import com.qingjizhang.app.domain.TxnKind
+import com.qingjizhang.app.ui.i18n.AppFormatters
+import com.qingjizhang.app.ui.i18n.displayName
+import com.qingjizhang.app.ui.i18n.localizedCategoryName
+import com.qingjizhang.app.ui.i18n.localizedLabel
 import com.qingjizhang.app.ui.theme.Expense
 import com.qingjizhang.app.ui.theme.Income
-import com.qingjizhang.app.ui.theme.InkMuted
 import com.qingjizhang.app.ui.theme.Transfer
 import com.qingjizhang.app.ui.theme.TransferSoft
 import java.time.YearMonth
@@ -86,15 +89,15 @@ fun MonthSwitcher(
         horizontalArrangement = Arrangement.Center,
     ) {
         IconButton(onClick = { onChange(month.minusMonths(1)) }) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "上个月")
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.prev_month))
         }
         Text(
-            month.format(Dates.ymCn),
+            AppFormatters.yearMonth(month),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
         )
         IconButton(onClick = { onChange(month.plusMonths(1)) }) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "下个月")
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.next_month))
         }
     }
 }
@@ -128,7 +131,7 @@ fun MoneyText(cents: Long, kind: TxnKind? = null, large: Boolean = false) {
         else -> kind != null || cents != 0L
     }
     Text(
-        text = Money.formatYuan(value, withSign = withSign),
+        text = AppFormatters.formatYuan(value, withSign),
         color = color,
         fontWeight = FontWeight.SemiBold,
         fontSize = if (large) 22.sp else 16.sp,
@@ -138,6 +141,12 @@ fun MoneyText(cents: Long, kind: TxnKind? = null, large: Boolean = false) {
 @Composable
 fun TxnRow(txn: Txn, onClick: () -> Unit) {
     val isTransfer = txn.kind == TxnKind.TRANSFER
+    val categoryLabel = if (isTransfer) {
+        stringResource(R.string.txn_transfer)
+    } else {
+        localizedCategoryName(txn.categoryName)
+    }
+    val accountFallback = stringResource(R.string.account_fallback)
     Row(
         Modifier
             .fillMaxWidth()
@@ -164,7 +173,7 @@ fun TxnRow(txn: Txn, onClick: () -> Unit) {
                 ColorDot(if (isTransfer) Transfer.toArgb() else txn.categoryColor)
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    if (isTransfer) "转账" else txn.categoryName,
+                    categoryLabel,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -175,9 +184,9 @@ fun TxnRow(txn: Txn, onClick: () -> Unit) {
                 append(txn.dateTime.toLocalTime().toString().take(5))
                 append(" · ")
                 if (isTransfer) {
-                    append(txn.accountName.ifBlank { "账户" })
+                    append(txn.accountName.ifBlank { accountFallback })
                     append(" → ")
-                    append(txn.transferToAccountName.ifBlank { "账户" })
+                    append(txn.transferToAccountName.ifBlank { accountFallback })
                 } else {
                     append(txn.accountName)
                 }
@@ -186,7 +195,13 @@ fun TxnRow(txn: Txn, onClick: () -> Unit) {
                     append(txn.note)
                 }
             }
-            Text(sub, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                sub,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
         if (!txn.receiptPath.isNullOrBlank()) {
             Text("📷", modifier = Modifier.padding(end = 6.dp))
@@ -198,7 +213,7 @@ fun TxnRow(txn: Txn, onClick: () -> Unit) {
 @Composable
 fun EmptyHint(text: String, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-        Text(text, color = InkMuted)
+        Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -206,15 +221,15 @@ fun EmptyHint(text: String, modifier: Modifier = Modifier) {
 fun DeltaChip(current: Long, previous: Long) {
     val delta = current - previous
     val label = when {
-        previous == 0L && current == 0L -> "与上月持平"
-        previous == 0L -> "新产生"
+        previous == 0L && current == 0L -> stringResource(R.string.delta_flat)
+        previous == 0L -> stringResource(R.string.delta_new)
         else -> {
             val pct = ((delta.toDouble() / kotlin.math.abs(previous)) * 100).toInt()
             val arrow = if (delta >= 0) "↑" else "↓"
-            "较上月 $arrow${kotlin.math.abs(pct)}%"
+            stringResource(R.string.delta_vs_last_month, arrow, kotlin.math.abs(pct))
         }
     }
-    Text(label, style = MaterialTheme.typography.labelSmall, color = InkMuted)
+    Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 @Composable

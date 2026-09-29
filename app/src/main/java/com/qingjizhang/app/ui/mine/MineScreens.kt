@@ -34,7 +34,7 @@ import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Repeat
-import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -53,7 +53,6 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -78,8 +77,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.qingjizhang.app.AppContainer
-import com.qingjizhang.app.BuildConfig
+import com.qingjizhang.app.R
+import com.qingjizhang.app.data.AppLanguage
 import com.qingjizhang.app.data.ImportMode
+import com.qingjizhang.app.data.ThemeMode
+import com.qingjizhang.app.updateAppLanguage
+import androidx.activity.ComponentActivity
+import com.qingjizhang.app.ui.components.LanguagePicker
+import com.qingjizhang.app.ui.components.ThemeModePicker
+import com.qingjizhang.app.ui.i18n.LocaleHelper
+import com.qingjizhang.app.ui.i18n.displayName
+import com.qingjizhang.app.ui.i18n.localizedLabel
+import androidx.compose.ui.res.stringResource
 import com.qingjizhang.app.data.ImportPreview
 import com.qingjizhang.app.data.Palette
 import com.qingjizhang.app.domain.Account
@@ -108,12 +117,11 @@ fun MineScreen(
     onRecurring: () -> Unit,
     onImportExport: () -> Unit,
     onSettings: () -> Unit,
+    onAbout: () -> Unit,
 ) {
     val app = LocalApp.current
     val accounts by app.repo.observeAccounts().collectAsState(initial = emptyList())
     val txns by app.repo.observeTransactions().collectAsState(initial = emptyList())
-    val settings by app.settings.settings.collectAsState(initial = com.qingjizhang.app.data.AppSettings())
-    val scope = rememberCoroutineScope()
     Column(
         Modifier
             .fillMaxSize()
@@ -121,44 +129,28 @@ fun MineScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("我的", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.mine_title), style = MaterialTheme.typography.headlineMedium)
         AppCard {
-            Text("净资产", color = InkMuted)
+            Text(stringResource(R.string.net_worth), color = MaterialTheme.colorScheme.onSurfaceVariant)
             MoneyText(accounts.sumOf { it.balanceCents }, large = true)
-            Text("共 ${txns.size} 笔流水 · ${accounts.size} 个账户", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
-        }
-        AppCard {
-            MenuRow("分类管理", "支出 / 收入分类与颜色", Icons.Outlined.Category, onCategories)
-            HorizontalDivider()
-            MenuRow("账户管理", "现金、银行卡、支付宝…", Icons.Outlined.AccountBalanceWallet, onAccounts)
-            HorizontalDivider()
-            MenuRow("周期记账", "每天 / 每周 / 每月自动入账", Icons.Outlined.Repeat, onRecurring)
-            HorizontalDivider()
-            MenuRow("导入 / 导出", "CSV、JSON 备份与恢复", Icons.Outlined.FileDownload, onImportExport)
-            HorizontalDivider()
-            MenuRow("提醒设置", "大额阈值、未记账提醒", Icons.Outlined.Notifications, onSettings)
-        }
-        AppCard {
-            ListItem(
-                headlineContent = { Text("深色模式") },
-                supportingContent = { Text("夜间使用更护眼，数据仍只保存在本机") },
-                leadingContent = { Icon(Icons.Outlined.DarkMode, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                trailingContent = {
-                    Switch(
-                        checked = settings.darkTheme,
-                        onCheckedChange = { checked ->
-                            scope.launch { app.settings.update { it.copy(darkTheme = checked) } }
-                        },
-                    )
-                },
-                colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
+            Text(
+                stringResource(R.string.mine_stats, txns.size, accounts.size),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
             )
         }
         AppCard {
-            Text("关于轻记账", fontWeight = FontWeight.Medium)
-            Spacer(Modifier.height(6.dp))
-            Text("版本 ${BuildConfig.VERSION_NAME}（${BuildConfig.VERSION_CODE}）", color = InkMuted)
-            Text("本地记账，数据只保存在这台手机上。", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+            MenuRow(stringResource(R.string.menu_categories), stringResource(R.string.menu_categories_sub), Icons.Outlined.Category, onCategories)
+            HorizontalDivider()
+            MenuRow(stringResource(R.string.menu_accounts), stringResource(R.string.menu_accounts_sub), Icons.Outlined.AccountBalanceWallet, onAccounts)
+            HorizontalDivider()
+            MenuRow(stringResource(R.string.menu_recurring), stringResource(R.string.menu_recurring_sub), Icons.Outlined.Repeat, onRecurring)
+            HorizontalDivider()
+            MenuRow(stringResource(R.string.menu_import_export), stringResource(R.string.menu_import_export_sub), Icons.Outlined.FileDownload, onImportExport)
+            HorizontalDivider()
+            MenuRow(stringResource(R.string.menu_reminders), stringResource(R.string.menu_reminders_sub), Icons.Outlined.Notifications, onSettings)
+            HorizontalDivider()
+            MenuRow(stringResource(R.string.menu_about), stringResource(R.string.menu_about_sub), Icons.Outlined.Info, onAbout)
         }
         Spacer(Modifier.height(72.dp))
     }
@@ -184,12 +176,12 @@ class CatalogViewModel(private val app: AppContainer) : ViewModel() {
         viewModelScope.launch { app.repo.upsertCategory(c) }
     }
 
-    fun deleteCategory(id: Long, onError: (String) -> Unit) {
+    fun deleteCategory(id: Long, onError: (Int) -> Unit) {
         viewModelScope.launch {
             try {
                 app.repo.deleteCategory(id)
             } catch (_: Exception) {
-                onError("该分类下还有流水，无法删除")
+                onError(R.string.error_category_in_use)
             }
         }
     }
@@ -198,12 +190,12 @@ class CatalogViewModel(private val app: AppContainer) : ViewModel() {
         viewModelScope.launch { app.repo.upsertAccount(a) }
     }
 
-    fun deleteAccount(id: Long, onError: (String) -> Unit) {
+    fun deleteAccount(id: Long, onError: (Int) -> Unit) {
         viewModelScope.launch {
             try {
                 app.repo.deleteAccount(id)
             } catch (_: Exception) {
-                onError("该账户下还有流水，无法删除")
+                onError(R.string.error_account_in_use)
             }
         }
     }
@@ -221,19 +213,21 @@ fun CategoriesScreen(onBack: () -> Unit) {
     val cats by vm.categories.collectAsState()
     var kind by remember { mutableStateOf(TxnKind.EXPENSE) }
     var editing by remember { mutableStateOf<Category?>(null) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var errorRes by remember { mutableStateOf<Int?>(null) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("分类管理") },
+                title = { Text(stringResource(R.string.categories_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back))
+                    }
                 },
                 actions = {
                     TextButton(onClick = {
                         editing = Category(0, "", kind, Palette.expense.first(), "•", false, cats.size)
-                    }) { Text("新增") }
+                    }) { Text(stringResource(R.string.action_add)) }
                 },
             )
         },
@@ -245,7 +239,7 @@ fun CategoriesScreen(onBack: () -> Unit) {
                         selected = kind == k,
                         onClick = { kind = k },
                         shape = SegmentedButtonDefaults.itemShape(i, TxnKind.ledger.size),
-                    ) { Text(k.label) }
+                    ) { Text(k.localizedLabel()) }
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -255,20 +249,22 @@ fun CategoriesScreen(onBack: () -> Unit) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             ColorDot(c.colorArgb, size = 14)
                             Spacer(Modifier.width(10.dp))
-                            Text("${c.emoji} ${c.name}", modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
-                            TextButton(onClick = { vm.deleteCategory(c.id) { error = it } }) { Text("删除") }
+                            Text("${c.emoji} ${c.displayName()}", modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
+                            TextButton(onClick = { vm.deleteCategory(c.id) { errorRes = it } }) {
+                                Text(stringResource(R.string.action_delete))
+                            }
                         }
                     }
                 }
             }
         }
     }
-    error?.let {
+    errorRes?.let { resId ->
         AlertDialog(
-            onDismissRequest = { error = null },
-            confirmButton = { TextButton(onClick = { error = null }) { Text("好") } },
-            title = { Text("无法删除") },
-            text = { Text(it) },
+            onDismissRequest = { errorRes = null },
+            confirmButton = { TextButton(onClick = { errorRes = null }) { Text(stringResource(R.string.action_ok)) } },
+            title = { Text(stringResource(R.string.cannot_delete_title)) },
+            text = { Text(stringResource(resId)) },
         )
     }
     val current = editing
@@ -288,12 +284,14 @@ private fun CategoryEditor(initial: Category, onDismiss: () -> Unit, onSave: (Ca
     var color by remember { mutableStateOf(initial.colorArgb) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initial.id == 0L) "新分类" else "编辑分类") },
+        title = {
+            Text(stringResource(if (initial.id == 0L) R.string.new_category else R.string.edit_category))
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(name, { name = it }, label = { Text("名称") }, singleLine = true)
-                OutlinedTextField(emoji, { emoji = it.take(2) }, label = { Text("表情") }, singleLine = true)
-                Text("颜色", color = InkMuted)
+                OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.field_name)) }, singleLine = true)
+                OutlinedTextField(emoji, { emoji = it.take(2) }, label = { Text(stringResource(R.string.field_emoji)) }, singleLine = true)
+                Text(stringResource(R.string.field_color), color = InkMuted)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Palette.extras.forEach { c ->
                         Box(
@@ -312,9 +310,9 @@ private fun CategoryEditor(initial: Category, onDismiss: () -> Unit, onSave: (Ca
         confirmButton = {
             TextButton(onClick = {
                 if (name.isNotBlank()) onSave(initial.copy(name = name.trim(), emoji = emoji, colorArgb = color))
-            }) { Text("保存") }
+            }) { Text(stringResource(R.string.action_save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
 }
 
@@ -325,19 +323,21 @@ fun AccountsScreen(onBack: () -> Unit) {
     val vm: CatalogViewModel = viewModel(factory = CatalogViewModel.factory(app))
     val accounts by vm.accounts.collectAsState()
     var editing by remember { mutableStateOf<Account?>(null) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var errorRes by remember { mutableStateOf<Int?>(null) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("账户管理") },
+                title = { Text(stringResource(R.string.accounts_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back))
+                    }
                 },
                 actions = {
                     TextButton(onClick = {
                         editing = Account(0, "", AccountType.CASH, 0, Palette.accounts.first(), false, accounts.size)
-                    }) { Text("新增") }
+                    }) { Text(stringResource(R.string.action_add)) }
                 },
             )
         },
@@ -352,24 +352,26 @@ fun AccountsScreen(onBack: () -> Unit) {
                         ColorDot(a.colorArgb, size = 14)
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(a.name, fontWeight = FontWeight.Medium)
-                            Text(a.type.label, color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+                            Text(a.displayName(), fontWeight = FontWeight.Medium)
+                            Text(a.type.localizedLabel(), color = InkMuted, style = MaterialTheme.typography.bodyMedium)
                         }
                         MoneyText(a.balanceCents)
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                        TextButton(onClick = { vm.deleteAccount(a.id) { error = it } }) { Text("删除") }
+                        TextButton(onClick = { vm.deleteAccount(a.id) { errorRes = it } }) {
+                            Text(stringResource(R.string.action_delete))
+                        }
                     }
                 }
             }
         }
     }
-    error?.let {
+    errorRes?.let { resId ->
         AlertDialog(
-            onDismissRequest = { error = null },
-            confirmButton = { TextButton(onClick = { error = null }) { Text("好") } },
-            title = { Text("无法删除") },
-            text = { Text(it) },
+            onDismissRequest = { errorRes = null },
+            confirmButton = { TextButton(onClick = { errorRes = null }) { Text(stringResource(R.string.action_ok)) } },
+            title = { Text(stringResource(R.string.cannot_delete_title)) },
+            text = { Text(stringResource(resId)) },
         )
     }
     val current = editing
@@ -390,20 +392,22 @@ private fun AccountEditor(initial: Account, onDismiss: () -> Unit, onSave: (Acco
     var color by remember { mutableStateOf(initial.colorArgb) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initial.id == 0L) "新账户" else "编辑账户") },
+        title = {
+            Text(stringResource(if (initial.id == 0L) R.string.new_account else R.string.edit_account))
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
-                OutlinedTextField(name, { name = it }, label = { Text("名称") }, singleLine = true)
+                OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.field_name)) }, singleLine = true)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AccountType.entries.forEach { t ->
-                        FilterChip(selected = type == t, onClick = { type = t }, label = { Text(t.label) })
+                        FilterChip(selected = type == t, onClick = { type = t }, label = { Text(t.localizedLabel()) })
                     }
                 }
                 OutlinedTextField(
                     opening,
                     { opening = it },
-                    label = { Text("期初余额") },
-                    prefix = { Text("¥") },
+                    label = { Text(stringResource(R.string.opening_balance)) },
+                    prefix = { Text(stringResource(R.string.currency_yuan)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                 )
@@ -422,9 +426,9 @@ private fun AccountEditor(initial: Account, onDismiss: () -> Unit, onSave: (Acco
             TextButton(onClick = {
                 val cents = Money.parseYuan(opening) ?: 0L
                 if (name.isNotBlank()) onSave(initial.copy(name = name.trim(), type = type, initialBalanceCents = cents, colorArgb = color))
-            }) { Text("保存") }
+            }) { Text(stringResource(R.string.action_save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
 }
 
@@ -439,8 +443,16 @@ class SettingsVm(private val app: AppContainer) : ViewModel() {
         }
     }
 
-    fun setDarkTheme(enabled: Boolean) {
-        viewModelScope.launch { app.settings.update { it.copy(darkTheme = enabled) } }
+    fun setThemeMode(mode: ThemeMode) {
+        viewModelScope.launch { app.settings.update { it.copy(themeMode = mode) } }
+    }
+
+    fun setAppLanguage(language: AppLanguage, onApplied: () -> Unit) {
+        viewModelScope.launch {
+            app.settings.update { it.copy(appLanguage = language) }
+            LocaleHelper.applyAppLanguage(language)
+            onApplied()
+        }
     }
 
     fun clearDemo(onDone: () -> Unit) {
@@ -476,81 +488,99 @@ fun SettingsScreen(onBack: () -> Unit) {
     var confirmReset by remember { mutableStateOf(false) }
     val snack = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val activity = context as? ComponentActivity
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("设置") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") } },
+                title = { Text(stringResource(R.string.settings_title)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back))
+                    }
+                },
             )
         },
         snackbarHost = { SnackbarHost(snack) },
     ) { padding ->
         Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             AppCard {
-                Text("外观", fontWeight = FontWeight.Medium)
-                Spacer(Modifier.height(8.dp))
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("深色模式", modifier = Modifier.weight(1f))
-                    Switch(checked = settings.darkTheme, onCheckedChange = { vm.setDarkTheme(it) })
+                Text(stringResource(R.string.settings_appearance), fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(12.dp))
+                ThemeModePicker(settings.themeMode, vm::setThemeMode)
+                Spacer(Modifier.height(16.dp))
+                LanguagePicker(settings.appLanguage) { lang ->
+                    if (lang != settings.appLanguage) {
+                        vm.setAppLanguage(lang) {
+                            activity?.let { act ->
+                                act.updateAppLanguage(settings.copy(appLanguage = lang))
+                            }
+                        }
+                    }
                 }
             }
             AppCard {
-                Text("大额交易提醒", fontWeight = FontWeight.Medium)
-                Text("单笔金额达到该阈值时，首页会显示醒目横幅。", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.large_txn_title), fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.large_txn_desc), color = InkMuted, style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     threshold, { threshold = it },
-                    label = { Text("阈值") }, prefix = { Text("¥") },
+                    label = { Text(stringResource(R.string.large_txn_threshold)) },
+                    prefix = { Text(stringResource(R.string.currency_yuan)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true, modifier = Modifier.fillMaxWidth(),
                 )
             }
             AppCard {
-                Text("未记账提醒", fontWeight = FontWeight.Medium)
-                Text("连续若干天没有新记录时，首页会轻轻提醒。设为 0 可关闭。", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.inactivity_title), fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.inactivity_desc), color = InkMuted, style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     days, { days = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("天数") },
+                    label = { Text(stringResource(R.string.inactivity_days)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true, modifier = Modifier.fillMaxWidth(),
                 )
             }
             Button(onClick = {
                 vm.save(threshold, days)
-                scope.launch { snack.showSnackbar("已保存") }
-            }, modifier = Modifier.fillMaxWidth()) { Text("保存设置") }
-            OutlinedButton(onClick = { confirmClear = true }, modifier = Modifier.fillMaxWidth()) { Text("清除全部流水（保留分类账户）") }
-            OutlinedButton(onClick = { confirmReset = true }, modifier = Modifier.fillMaxWidth()) { Text("恢复演示数据") }
+                scope.launch { snack.showSnackbar(context.getString(R.string.settings_saved)) }
+            }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.save_settings)) }
+            OutlinedButton(onClick = { confirmClear = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.clear_all_txns))
+            }
+            OutlinedButton(onClick = { confirmReset = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.restore_demo))
+            }
         }
     }
     if (confirmClear) {
         AlertDialog(
             onDismissRequest = { confirmClear = false },
-            title = { Text("清除全部流水？") },
-            text = { Text("分类、账户和预算会保留，流水不可恢复（除非你事先导出了备份）。") },
+            title = { Text(stringResource(R.string.confirm_clear_txns_title)) },
+            text = { Text(stringResource(R.string.confirm_clear_txns_body)) },
             confirmButton = {
                 TextButton(onClick = {
-                    vm.clearDemo { scope.launch { snack.showSnackbar("流水已清空") } }
+                    vm.clearDemo { scope.launch { snack.showSnackbar(context.getString(R.string.txns_cleared)) } }
                     confirmClear = false
-                }) { Text("清除") }
+                }) { Text(stringResource(R.string.action_clear)) }
             },
-            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("取消") } },
+            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
     if (confirmReset) {
         AlertDialog(
             onDismissRequest = { confirmReset = false },
-            title = { Text("恢复演示数据？") },
-            text = { Text("将重置分类、账户、预算和流水为首次启动时的示例。") },
+            title = { Text(stringResource(R.string.confirm_restore_demo_title)) },
+            text = { Text(stringResource(R.string.confirm_restore_demo_body)) },
             confirmButton = {
                 TextButton(onClick = {
-                    vm.resetAll { scope.launch { snack.showSnackbar("已恢复演示数据") } }
+                    vm.resetAll { scope.launch { snack.showSnackbar(context.getString(R.string.demo_restored)) } }
                     confirmReset = false
-                }) { Text("恢复") }
+                }) { Text(stringResource(R.string.action_restore)) }
             },
-            dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("取消") } },
+            dismissButton = { TextButton(onClick = { confirmReset = false }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
 }
@@ -558,7 +588,7 @@ fun SettingsScreen(onBack: () -> Unit) {
 class ImportVm(private val app: AppContainer) : ViewModel() {
     var preview by mutableStateOf<ImportPreview?>(null)
     var busy by mutableStateOf(false)
-    var message by mutableStateOf<String?>(null)
+    var message by mutableStateOf<Pair<Int, List<Any>>?>(null)
 
     fun parse(name: String, text: String) {
         viewModelScope.launch {
@@ -571,7 +601,7 @@ class ImportVm(private val app: AppContainer) : ViewModel() {
                     app.backup.previewCsv(text, name)
                 }
             } catch (e: Exception) {
-                message = "无法解析：${e.message}"
+                message = R.string.parse_failed to listOf(e.message ?: "")
                 null
             }
             busy = false
@@ -584,11 +614,11 @@ class ImportVm(private val app: AppContainer) : ViewModel() {
             busy = true
             try {
                 app.backup.apply(p, mode)
-                message = "导入完成"
+                message = R.string.import_done to emptyList()
                 preview = null
                 onDone()
             } catch (e: Exception) {
-                message = "导入失败：${e.message}"
+                message = R.string.import_failed to listOf(e.message ?: "")
             }
             busy = false
         }
@@ -629,7 +659,7 @@ fun ImportExportScreen(onBack: () -> Unit) {
             withContext(Dispatchers.IO) {
                 context.contentResolver.openOutputStream(uri)?.use { it.write(body.toByteArray()) }
             }
-            snack.showSnackbar("CSV 已保存")
+            snack.showSnackbar(context.getString(R.string.csv_saved))
         }
     }
     val createJson = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -639,7 +669,7 @@ fun ImportExportScreen(onBack: () -> Unit) {
             withContext(Dispatchers.IO) {
                 context.contentResolver.openOutputStream(uri)?.use { it.write(body.toByteArray()) }
             }
-            snack.showSnackbar("JSON 备份已保存")
+            snack.showSnackbar(context.getString(R.string.json_saved))
         }
     }
 
@@ -652,14 +682,21 @@ fun ImportExportScreen(onBack: () -> Unit) {
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(intent, "分享备份"))
+        context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_backup_chooser)))
     }
+
+    val csvDefaultName = context.getString(R.string.export_csv_filename, LocalDate.now())
+    val jsonDefaultName = context.getString(R.string.export_json_filename, LocalDate.now())
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("导入 / 导出") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") } },
+                title = { Text(stringResource(R.string.import_export_title)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back))
+                    }
+                },
             )
         },
         snackbarHost = { SnackbarHost(snack) },
@@ -669,33 +706,33 @@ fun ImportExportScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             AppCard {
-                Text("导出", fontWeight = FontWeight.Medium)
-                Text("CSV 适合用表格软件打开；JSON 是完整备份（流水、分类、账户、预算）。", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.export_section), fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.export_desc), color = InkMuted, style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(8.dp))
                 Button(
-                    onClick = { createCsv.launch("轻记账-${LocalDate.now()}.csv") },
+                    onClick = { createCsv.launch(csvDefaultName) },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("保存 CSV") }
+                ) { Text(stringResource(R.string.save_csv)) }
                 OutlinedButton(
                     onClick = {
-                        scope.launch { share("轻记账-${LocalDate.now()}.csv", "text/csv", vm.csv()) }
+                        scope.launch { share(csvDefaultName, "text/csv", vm.csv()) }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("分享 CSV") }
+                ) { Text(stringResource(R.string.share_csv)) }
                 Button(
-                    onClick = { createJson.launch("轻记账-备份-${LocalDate.now()}.json") },
+                    onClick = { createJson.launch(jsonDefaultName) },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("保存 JSON 备份") }
+                ) { Text(stringResource(R.string.save_json)) }
                 OutlinedButton(
                     onClick = {
-                        scope.launch { share("轻记账-备份-${LocalDate.now()}.json", "application/json", vm.json()) }
+                        scope.launch { share(jsonDefaultName, "application/json", vm.json()) }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("一键分享备份") }
+                ) { Text(stringResource(R.string.share_json)) }
             }
             AppCard {
-                Text("导入", fontWeight = FontWeight.Medium)
-                Text("支持本应用导出的 JSON，以及含「日期、金额、分类、备注」等常见列的 CSV。导入前会预览并提示重复项。", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.import_section), fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.import_desc), color = InkMuted, style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(8.dp))
                 Button(
                     onClick = { openDoc.launch(arrayOf("text/*", "application/json", "*/*")) },
@@ -703,36 +740,51 @@ fun ImportExportScreen(onBack: () -> Unit) {
                 ) {
                     Icon(Icons.Outlined.FileUpload, null)
                     Spacer(Modifier.width(8.dp))
-                    Text("选择文件恢复")
+                    Text(stringResource(R.string.pick_file))
                 }
             }
-            vm.message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
-            if (vm.busy) Text("处理中…", color = InkMuted)
+            vm.message?.let { (resId, args) ->
+                Text(
+                    stringResource(resId, *args.toTypedArray()),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            if (vm.busy) Text(stringResource(R.string.processing), color = InkMuted)
             preview?.let { p ->
                 AppCard {
-                    Text("预览 · ${p.format}", fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.preview_title, p.format), fontWeight = FontWeight.Medium)
                     Text(p.sourceName, color = InkMuted, style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(6.dp))
-                    Text("新增 ${p.newCount} 笔 · 可能重复 ${p.duplicateCount} 笔")
+                    Text(stringResource(R.string.preview_counts, p.newCount, p.duplicateCount))
                     p.warnings.forEach { Text(it, color = InkMuted, style = MaterialTheme.typography.bodyMedium) }
                     Spacer(Modifier.height(8.dp))
                     val rows = p.csvRows.take(8)
                     rows.forEach { r ->
                         Text("${r.date} ${r.type} ${r.amount} ${r.category} ${r.note}", style = MaterialTheme.typography.bodyMedium)
                     }
-                    if (p.csvRows.size > 8) Text("…共 ${p.csvRows.size} 行", color = InkMuted)
+                    if (p.csvRows.size > 8) {
+                        Text(stringResource(R.string.preview_rows_more, p.csvRows.size), color = InkMuted)
+                    }
                     p.backup?.let { b ->
-                        Text("账户 ${b.accounts.size} · 分类 ${b.categories.size} · 流水 ${b.transactions.size} · 预算 ${b.budgets.size}")
+                        Text(
+                            stringResource(
+                                R.string.preview_backup_counts,
+                                b.accounts.size,
+                                b.categories.size,
+                                b.transactions.size,
+                                b.budgets.size,
+                            ),
+                        )
                     }
                     Spacer(Modifier.height(8.dp))
                     Button(onClick = { vm.apply(ImportMode.SKIP_DUPLICATES) {} }, modifier = Modifier.fillMaxWidth()) {
-                        Text("导入并跳过重复")
+                        Text(stringResource(R.string.import_skip_dupes))
                     }
                     OutlinedButton(onClick = { vm.apply(ImportMode.IMPORT_ALL) {} }, modifier = Modifier.fillMaxWidth()) {
-                        Text("全部导入（允许重复）")
+                        Text(stringResource(R.string.import_all))
                     }
                     OutlinedButton(onClick = { vm.apply(ImportMode.REPLACE_ALL) {} }, modifier = Modifier.fillMaxWidth()) {
-                        Text("覆盖现有数据")
+                        Text(stringResource(R.string.import_replace))
                     }
                 }
             }

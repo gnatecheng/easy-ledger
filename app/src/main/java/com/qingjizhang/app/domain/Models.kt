@@ -126,9 +126,9 @@ data class BudgetStatus(
 }
 
 object Money {
-    fun formatYuan(cents: Long, withSign: Boolean = false): String {
+    fun formatYuan(cents: Long, withSign: Boolean = false, locale: Locale = Locale.getDefault()): String {
         val abs = kotlin.math.abs(cents) / 100.0
-        val body = "¥" + "%.2f".format(Locale.CHINA, abs)
+        val body = "¥" + "%.2f".format(locale, abs)
         return when {
             !withSign -> body
             cents > 0 -> "+$body"
@@ -137,7 +137,8 @@ object Money {
         }
     }
 
-    fun formatPlain(cents: Long): String = "%.2f".format(Locale.CHINA, cents / 100.0)
+    fun formatPlain(cents: Long, locale: Locale = Locale.getDefault()): String =
+        "%.2f".format(locale, cents / 100.0)
 
     fun parseYuan(raw: String): Long? {
         val cleaned = raw.trim()

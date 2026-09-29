@@ -39,14 +39,18 @@ import com.qingjizhang.app.domain.Dates
 import com.qingjizhang.app.domain.MonthSummary
 import com.qingjizhang.app.domain.Txn
 import com.qingjizhang.app.domain.TxnKind
+import com.qingjizhang.app.R
 import com.qingjizhang.app.ui.LocalApp
 import com.qingjizhang.app.ui.components.AppCard
+import com.qingjizhang.app.ui.i18n.AppFormatters
+import com.qingjizhang.app.ui.i18n.displayName
+import com.qingjizhang.app.ui.i18n.localizedLabel
+import androidx.compose.ui.res.stringResource
 import com.qingjizhang.app.ui.components.CategoryPieChart
 import com.qingjizhang.app.ui.components.DeltaChip
 import com.qingjizhang.app.ui.components.MoneyText
 import com.qingjizhang.app.ui.components.TrendChart
 import com.qingjizhang.app.ui.share.MonthShare
-import com.qingjizhang.app.ui.theme.InkMuted
 import com.qingjizhang.app.ui.vmFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -175,8 +179,12 @@ fun StatsScreen() {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("统计", style = MaterialTheme.typography.headlineMedium)
-        Text("看看钱都去哪了", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+        Text(stringResource(R.string.stats_title), style = MaterialTheme.typography.headlineMedium)
+        Text(
+            stringResource(R.string.stats_tagline),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium,
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TextButton(onClick = {
                 MonthShare.shareImage(
@@ -184,44 +192,48 @@ fun StatsScreen() {
                     MonthSummary(YearMonth.now(), ui.income, ui.expense, ui.transfer),
                     ui.slices,
                 )
-            }) { Text("分享月报") }
+            }) { Text(stringResource(R.string.share_month_report)) }
             TextButton(onClick = {
                 MonthShare.sharePdf(
                     context,
                     MonthSummary(YearMonth.now(), ui.income, ui.expense, ui.transfer),
                     ui.slices,
                 )
-            }) { Text("导出 PDF") }
+            }) { Text(stringResource(R.string.export_pdf)) }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(ui.preset == RangePreset.THIS_MONTH, { vm.preset.value = RangePreset.THIS_MONTH }, label = { Text("本月") })
-            FilterChip(ui.preset == RangePreset.LAST_3, { vm.preset.value = RangePreset.LAST_3 }, label = { Text("近3月") })
-            FilterChip(ui.preset == RangePreset.LAST_12, { vm.preset.value = RangePreset.LAST_12 }, label = { Text("近12月") })
-            FilterChip(ui.preset == RangePreset.CUSTOM, { vm.preset.value = RangePreset.CUSTOM }, label = { Text("自定义") })
+            FilterChip(ui.preset == RangePreset.THIS_MONTH, { vm.preset.value = RangePreset.THIS_MONTH }, label = { Text(stringResource(R.string.range_this_month)) })
+            FilterChip(ui.preset == RangePreset.LAST_3, { vm.preset.value = RangePreset.LAST_3 }, label = { Text(stringResource(R.string.range_last_3)) })
+            FilterChip(ui.preset == RangePreset.LAST_12, { vm.preset.value = RangePreset.LAST_12 }, label = { Text(stringResource(R.string.range_last_12)) })
+            FilterChip(ui.preset == RangePreset.CUSTOM, { vm.preset.value = RangePreset.CUSTOM }, label = { Text(stringResource(R.string.range_custom)) })
         }
         if (ui.preset == RangePreset.CUSTOM) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { pickingStart = true }, modifier = Modifier.weight(1f)) { Text("从 ${ui.start}") }
-                OutlinedButton(onClick = { pickingEnd = true }, modifier = Modifier.weight(1f)) { Text("到 ${ui.end}") }
+                OutlinedButton(onClick = { pickingStart = true }, modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.stats_from_date, ui.start))
+                }
+                OutlinedButton(onClick = { pickingEnd = true }, modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.stats_to_date, ui.end))
+                }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(ui.kind == TxnKind.EXPENSE, { vm.kind.value = TxnKind.EXPENSE }, label = { Text("支出构成") })
-            FilterChip(ui.kind == TxnKind.INCOME, { vm.kind.value = TxnKind.INCOME }, label = { Text("收入构成") })
+            FilterChip(ui.kind == TxnKind.EXPENSE, { vm.kind.value = TxnKind.EXPENSE }, label = { Text(stringResource(R.string.stats_expense_breakdown)) })
+            FilterChip(ui.kind == TxnKind.INCOME, { vm.kind.value = TxnKind.INCOME }, label = { Text(stringResource(R.string.stats_income_breakdown)) })
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(ui.accountId == null, { vm.accountId.value = null }, label = { Text("全部账户") })
+            FilterChip(ui.accountId == null, { vm.accountId.value = null }, label = { Text(stringResource(R.string.filter_all_accounts)) })
             ui.accounts.take(6).forEach { acc ->
                 FilterChip(
                     selected = ui.accountId == acc.id,
                     onClick = { vm.accountId.value = if (ui.accountId == acc.id) null else acc.id },
-                    label = { Text(acc.name) },
+                    label = { Text(acc.displayName()) },
                 )
             }
         }
         if (ui.tags.isNotEmpty()) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(ui.tag == null, { vm.tag.value = null }, label = { Text("全部标签") })
+                FilterChip(ui.tag == null, { vm.tag.value = null }, label = { Text(stringResource(R.string.filter_all_tags)) })
                 ui.tags.forEach { t ->
                     FilterChip(ui.tag == t, { vm.tag.value = if (ui.tag == t) null else t }, label = { Text(t) })
                 }
@@ -229,32 +241,40 @@ fun StatsScreen() {
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             AppCard(Modifier.weight(1f)) {
-                Text("支出", color = InkMuted)
+                Text(stringResource(R.string.chart_expense), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 MoneyText(ui.expense, TxnKind.EXPENSE, large = true)
                 DeltaChip(ui.expense, ui.prevExpense)
             }
             AppCard(Modifier.weight(1f)) {
-                Text("收入", color = InkMuted)
+                Text(stringResource(R.string.chart_income), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 MoneyText(ui.income, TxnKind.INCOME, large = true)
                 DeltaChip(ui.income, ui.prevIncome)
             }
         }
         AppCard {
-            Text("结余", color = InkMuted)
+            Text(stringResource(R.string.balance), color = MaterialTheme.colorScheme.onSurfaceVariant)
             MoneyText(ui.income - ui.expense, large = true)
-            Text("${ui.start} 至 ${ui.end} · ${ui.filtered.size} 笔", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                stringResource(R.string.stats_period_range, ui.start, ui.end, ui.filtered.size),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
+            )
             if (ui.transfer > 0) {
                 Spacer(Modifier.height(6.dp))
-                Text("期间转账 ${com.qingjizhang.app.domain.Money.formatYuan(ui.transfer)}（不计入收支）", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    stringResource(R.string.stats_transfer_note, AppFormatters.formatYuan(ui.transfer)),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
         }
         AppCard {
-            Text("分类占比", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.stats_by_category), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
-            CategoryPieChart(ui.slices, centerLabel = ui.kind.label)
+            CategoryPieChart(ui.slices, centerLabel = ui.kind.localizedLabel())
         }
         AppCard {
-            Text("近 12 个月趋势", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.stats_trend), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
             TrendChart(ui.trend)
         }
@@ -279,10 +299,10 @@ fun StatsScreen() {
                     }
                     pickingStart = false
                     pickingEnd = false
-                }) { Text("确定") }
+                }) { Text(stringResource(R.string.action_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { pickingStart = false; pickingEnd = false }) { Text("取消") }
+                TextButton(onClick = { pickingStart = false; pickingEnd = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         ) { DatePicker(state = state) }
     }
