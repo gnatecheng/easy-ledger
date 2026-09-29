@@ -61,6 +61,8 @@ echo "sdk.dir=/path/to/Android/sdk" > local.properties
 
 演示签名仅用于自行安装，**不能**用于上架。密码见 `app/build.gradle.kts` 中的 `signingConfigs.release`。
 
+推送 `v*` 标签时，GitHub Actions 会发布调试包，附件文件名为 `easy-ledger-{versionName}-{tag}.apk`（例如 `easy-ledger-1.3.0-v1.3.0.apk`）。
+
 ## 安装到手机
 
 1. 把 `app-release.apk` 拷到手机。
