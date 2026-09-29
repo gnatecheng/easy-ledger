@@ -49,6 +49,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -56,7 +57,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.qingjizhang.app.AppContainer
-import com.qingjizhang.app.domain.Dates
+import com.qingjizhang.app.R
 import com.qingjizhang.app.domain.Money
 import com.qingjizhang.app.domain.RecurringDates
 import com.qingjizhang.app.domain.RecurringFrequency
@@ -67,6 +68,10 @@ import com.qingjizhang.app.ui.components.AppCard
 import com.qingjizhang.app.ui.components.ColorDot
 import com.qingjizhang.app.ui.components.EmptyHint
 import com.qingjizhang.app.ui.components.MoneyText
+import com.qingjizhang.app.ui.i18n.AppFormatters
+import com.qingjizhang.app.ui.i18n.displayName
+import com.qingjizhang.app.ui.i18n.localizedCategoryName
+import com.qingjizhang.app.ui.i18n.localizedLabel
 import com.qingjizhang.app.ui.theme.InkMuted
 import com.qingjizhang.app.ui.vmFactory
 import kotlinx.coroutines.flow.SharingStarted
@@ -114,15 +119,17 @@ fun RecurringListScreen(onBack: () -> Unit, onEdit: (Long) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("周期记账") },
+                title = { Text(stringResource(R.string.recurring_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back))
+                    }
                 },
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { onEdit(0) }) {
-                Icon(Icons.Default.Add, contentDescription = "新建规则")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_new_recurring))
             }
         },
     ) { padding ->
@@ -131,10 +138,10 @@ fun RecurringListScreen(onBack: () -> Unit, onEdit: (Long) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item {
-                Text("打开应用时会自动补上到期流水。已暂停的规则不会生成。", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.recurring_hint), color = InkMuted, style = MaterialTheme.typography.bodyMedium)
             }
             if (rules.isEmpty()) {
-                item { EmptyHint("还没有周期规则，点右下角添加房租、工资等") }
+                item { EmptyHint(stringResource(R.string.recurring_empty)) }
             }
             items(rules, key = { it.id }) { rule ->
                 AppCard(onClick = { onEdit(rule.id) }) {
@@ -142,8 +149,15 @@ fun RecurringListScreen(onBack: () -> Unit, onEdit: (Long) -> Unit) {
                         ColorDot(rule.categoryColor, size = 12)
                         Spacer(Modifier.width(8.dp))
                         Column(Modifier.weight(1f)) {
-                            Text("${rule.categoryEmoji} ${rule.categoryName}", fontWeight = FontWeight.Medium)
-                            Text("${rule.frequency.label} · ${rule.accountName}", color = InkMuted, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                "${rule.categoryEmoji} ${localizedCategoryName(rule.categoryName)}",
+                                fontWeight = FontWeight.Medium,
+                            )
+                            Text(
+                                "${rule.frequency.localizedLabel()} · ${rule.accountName}",
+                                color = InkMuted,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
                             val next = if (rule.paused) null else {
                                 val candidate = rule.lastGeneratedDate?.let {
                                     RecurringDates.next(it, rule.frequency, rule.startDate)
@@ -152,9 +166,9 @@ fun RecurringListScreen(onBack: () -> Unit, onEdit: (Long) -> Unit) {
                             }
                             Text(
                                 when {
-                                    rule.paused -> "已暂停"
-                                    next == null -> "已结束"
-                                    else -> "下次 ${next.format(Dates.dateCn)}"
+                                    rule.paused -> stringResource(R.string.status_paused)
+                                    next == null -> stringResource(R.string.recurring_status_ended)
+                                    else -> stringResource(R.string.recurring_next, AppFormatters.localDate(next))
                                 },
                                 color = InkMuted,
                                 style = MaterialTheme.typography.labelSmall,
@@ -163,9 +177,13 @@ fun RecurringListScreen(onBack: () -> Unit, onEdit: (Long) -> Unit) {
                         MoneyText(rule.amountCents, rule.kind)
                     }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(if (rule.paused) "已暂停" else "启用中", modifier = Modifier.weight(1f), color = InkMuted)
+                        Text(
+                            stringResource(if (rule.paused) R.string.status_paused else R.string.recurring_status_active),
+                            modifier = Modifier.weight(1f),
+                            color = InkMuted,
+                        )
                         Switch(checked = !rule.paused, onCheckedChange = { vm.pause(rule.id, !it) })
-                        TextButton(onClick = { confirmId = rule.id }) { Text("删除") }
+                        TextButton(onClick = { confirmId = rule.id }) { Text(stringResource(R.string.action_delete)) }
                     }
                 }
             }
@@ -175,12 +193,12 @@ fun RecurringListScreen(onBack: () -> Unit, onEdit: (Long) -> Unit) {
     confirmId?.let { id ->
         AlertDialog(
             onDismissRequest = { confirmId = null },
-            title = { Text("删除这条周期规则？") },
-            text = { Text("已经生成的流水会保留，只是不再自动记账。") },
+            title = { Text(stringResource(R.string.delete_recurring_title)) },
+            text = { Text(stringResource(R.string.delete_recurring_body)) },
             confirmButton = {
-                TextButton(onClick = { vm.delete(id); confirmId = null }) { Text("删除") }
+                TextButton(onClick = { vm.delete(id); confirmId = null }) { Text(stringResource(R.string.action_delete)) }
             },
-            dismissButton = { TextButton(onClick = { confirmId = null }) { Text("取消") } },
+            dismissButton = { TextButton(onClick = { confirmId = null }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
 }
@@ -203,7 +221,7 @@ fun RecurringEditScreen(ruleId: Long, onBack: () -> Unit) {
     var useEnd by remember { mutableStateOf(false) }
     var maxCount by remember { mutableStateOf("") }
     var paused by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var errorRes by remember { mutableStateOf<Int?>(null) }
     var pickStart by remember { mutableStateOf(false) }
     var pickEnd by remember { mutableStateOf(false) }
     val existingId = ruleId.takeIf { it > 0 }
@@ -232,9 +250,13 @@ fun RecurringEditScreen(ruleId: Long, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (existingId == null) "新建周期规则" else "编辑周期规则") },
+                title = {
+                    Text(stringResource(if (existingId == null) R.string.recurring_new else R.string.recurring_edit))
+                },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back))
+                    }
                 },
             )
         },
@@ -252,45 +274,52 @@ fun RecurringEditScreen(ruleId: Long, onBack: () -> Unit) {
                             categoryId = cats.firstOrNull { it.kind == k && !it.archived }?.id ?: 0
                         },
                         shape = SegmentedButtonDefaults.itemShape(i, TxnKind.ledger.size),
-                    ) { Text(k.label) }
+                    ) { Text(k.localizedLabel()) }
                 }
             }
             OutlinedTextField(
                 amount, { amount = it.filter { ch -> ch.isDigit() || ch == '.' } },
-                modifier = Modifier.fillMaxWidth(), label = { Text("金额") }, prefix = { Text("¥") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(R.string.field_amount_label)) },
+                prefix = { Text(stringResource(R.string.currency_yuan)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true,
             )
-            Text("频率", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.field_frequency), style = MaterialTheme.typography.titleMedium)
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 RecurringFrequency.entries.forEachIndexed { i, f ->
                     SegmentedButton(
                         selected = frequency == f,
                         onClick = { frequency = f },
                         shape = SegmentedButtonDefaults.itemShape(i, RecurringFrequency.entries.size),
-                    ) { Text(f.label) }
+                    ) { Text(f.localizedLabel()) }
                 }
             }
-            Text("分类", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.filter_category), style = MaterialTheme.typography.titleMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 filtered.forEach { c ->
                     FilterChip(
                         selected = categoryId == c.id,
                         onClick = { categoryId = c.id },
-                        label = { Text("${c.emoji} ${c.name}") },
+                        label = { Text("${c.emoji} ${c.displayName()}") },
                     )
                 }
             }
-            Text("账户", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.accounts), style = MaterialTheme.typography.titleMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 accs.filter { !it.archived }.forEach { a ->
-                    FilterChip(selected = accountId == a.id, onClick = { accountId = a.id }, label = { Text(a.name) })
+                    FilterChip(
+                        selected = accountId == a.id,
+                        onClick = { accountId = a.id },
+                        label = { Text(a.displayName()) },
+                    )
                 }
             }
             OutlinedButton(onClick = { pickStart = true }, modifier = Modifier.fillMaxWidth()) {
-                Text("开始日期 ${start.format(Dates.dateCn)}")
+                Text(stringResource(R.string.start_date, AppFormatters.localDate(start)))
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("设置结束日期", modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.set_end_date), modifier = Modifier.weight(1f))
                 Switch(checked = useEnd, onCheckedChange = {
                     useEnd = it
                     if (it && end == null) end = start.plusMonths(12)
@@ -298,32 +327,36 @@ fun RecurringEditScreen(ruleId: Long, onBack: () -> Unit) {
             }
             if (useEnd) {
                 OutlinedButton(onClick = { pickEnd = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text("结束日期 ${(end ?: start).format(Dates.dateCn)}")
+                    Text(stringResource(R.string.end_date, AppFormatters.localDate(end ?: start)))
                 }
             }
             OutlinedTextField(
                 maxCount, { maxCount = it.filter { ch -> ch.isDigit() } },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("次数上限（可空）") },
-                placeholder = { Text("留空表示一直重复") },
+                label = { Text(stringResource(R.string.max_count)) },
+                placeholder = { Text(stringResource(R.string.max_count_hint)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
             )
-            OutlinedTextField(note, { note = it }, modifier = Modifier.fillMaxWidth(), label = { Text("备注") })
+            OutlinedTextField(
+                note, { note = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(R.string.field_note)) },
+            )
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("暂停此规则", modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.pause_rule), modifier = Modifier.weight(1f))
                 Switch(checked = paused, onCheckedChange = { paused = it })
             }
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            errorRes?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
             Button(
                 onClick = {
                     val cents = Money.parseYuan(amount)
                     when {
-                        cents == null || cents <= 0 -> error = "请输入有效金额"
-                        categoryId == 0L -> error = "请选择分类"
-                        accountId == 0L -> error = "请选择账户"
+                        cents == null || cents <= 0 -> errorRes = R.string.error_invalid_amount
+                        categoryId == 0L -> errorRes = R.string.error_pick_category
+                        accountId == 0L -> errorRes = R.string.error_pick_account
                         else -> {
-                            error = null
+                            errorRes = null
                             vm.save(
                                 RecurringRule(
                                     id = existingId ?: 0,
@@ -346,7 +379,7 @@ fun RecurringEditScreen(ruleId: Long, onBack: () -> Unit) {
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("保存并生成到期流水") }
+            ) { Text(stringResource(R.string.save_and_generate)) }
         }
     }
     if (pickStart || pickEnd) {
@@ -363,9 +396,13 @@ fun RecurringEditScreen(ruleId: Long, onBack: () -> Unit) {
                     }
                     pickStart = false
                     pickEnd = false
-                }) { Text("确定") }
+                }) { Text(stringResource(R.string.action_confirm)) }
             },
-            dismissButton = { TextButton(onClick = { pickStart = false; pickEnd = false }) { Text("取消") } },
+            dismissButton = {
+                TextButton(onClick = { pickStart = false; pickEnd = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
         ) { DatePicker(state = state) }
     }
 }

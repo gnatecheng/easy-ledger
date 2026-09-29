@@ -19,6 +19,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -26,12 +27,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.qingjizhang.app.R
+import com.qingjizhang.app.domain.TxnKind
 import com.qingjizhang.app.ui.budget.BudgetScreen
 import com.qingjizhang.app.ui.home.HomeScreen
+import com.qingjizhang.app.ui.mine.AboutScreen
 import com.qingjizhang.app.ui.mine.AccountsScreen
 import com.qingjizhang.app.ui.mine.CategoriesScreen
 import com.qingjizhang.app.ui.mine.ImportExportScreen
 import com.qingjizhang.app.ui.mine.MineScreen
+import com.qingjizhang.app.ui.mine.AppearanceSettingsScreen
 import com.qingjizhang.app.ui.mine.SettingsScreen
 import com.qingjizhang.app.ui.recurring.RecurringEditScreen
 import com.qingjizhang.app.ui.recurring.RecurringListScreen
@@ -39,24 +44,21 @@ import com.qingjizhang.app.ui.stats.StatsScreen
 import com.qingjizhang.app.ui.txn.QuickAddSheet
 import com.qingjizhang.app.ui.txn.TransactionEditScreen
 import com.qingjizhang.app.ui.txn.TransactionListScreen
-import com.qingjizhang.app.domain.TxnKind
 
-private data class Tab(val route: String, val label: String, val icon: ImageVector)
-
-private val tabs = listOf(
-    Tab("home", "首页", Icons.Outlined.Home),
-    Tab("txns", "明细", Icons.Outlined.ReceiptLong),
-    Tab("stats", "统计", Icons.Outlined.PieChart),
-    Tab("budgets", "预算", Icons.Outlined.AccountBalanceWallet),
-    Tab("mine", "我的", Icons.Outlined.Person),
-)
+private enum class Tab(val route: String, val labelRes: Int, val icon: ImageVector) {
+    HOME("home", R.string.tab_home, Icons.Outlined.Home),
+    TXNS("txns", R.string.tab_txns, Icons.Outlined.ReceiptLong),
+    STATS("stats", R.string.tab_stats, Icons.Outlined.PieChart),
+    BUDGETS("budgets", R.string.tab_budgets, Icons.Outlined.AccountBalanceWallet),
+    MINE("mine", R.string.tab_mine, Icons.Outlined.Person),
+}
 
 @Composable
 fun QingJiZhangRoot() {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route.orEmpty()
-    val showBottom = tabs.any { it.route == route }
+    val showBottom = Tab.entries.any { it.route == route }
     var quickAdd by rememberSaveable { mutableStateOf(false) }
     var quickKind by rememberSaveable { mutableStateOf("EXPENSE") }
 
@@ -64,7 +66,7 @@ fun QingJiZhangRoot() {
         bottomBar = {
             if (showBottom) {
                 NavigationBar {
-                    tabs.forEach { tab ->
+                    Tab.entries.forEach { tab ->
                         NavigationBarItem(
                             selected = route == tab.route,
                             onClick = {
@@ -74,8 +76,10 @@ fun QingJiZhangRoot() {
                                     restoreState = true
                                 }
                             },
-                            icon = { Icon(tab.icon, contentDescription = tab.label) },
-                            label = { Text(tab.label) },
+                            icon = {
+                                Icon(tab.icon, contentDescription = stringResource(tab.labelRes))
+                            },
+                            label = { Text(stringResource(tab.labelRes)) },
                         )
                     }
                 }
@@ -135,7 +139,9 @@ fun QingJiZhangRoot() {
                     onAccounts = { nav.navigate("accounts") },
                     onRecurring = { nav.navigate("recurring") },
                     onImportExport = { nav.navigate("import") },
+                    onAppearance = { nav.navigate("appearance") },
                     onSettings = { nav.navigate("settings") },
+                    onAbout = { nav.navigate("about") },
                 )
             }
             composable(
@@ -163,7 +169,9 @@ fun QingJiZhangRoot() {
                 )
             }
             composable("import") { ImportExportScreen(onBack = { nav.popBackStack() }) }
+            composable("appearance") { AppearanceSettingsScreen(onBack = { nav.popBackStack() }) }
             composable("settings") { SettingsScreen(onBack = { nav.popBackStack() }) }
+            composable("about") { AboutScreen(onBack = { nav.popBackStack() }) }
         }
     }
     if (quickAdd) {

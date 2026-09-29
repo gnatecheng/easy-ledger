@@ -15,7 +15,10 @@ import com.qingjizhang.app.R
 import com.qingjizhang.app.domain.Dates
 import com.qingjizhang.app.domain.Money
 import com.qingjizhang.app.domain.TxnKind
+import com.qingjizhang.app.ui.i18n.formatLocale
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import java.util.concurrent.Executors
 
 class MonthBalanceWidget : AppWidgetProvider() {
@@ -61,12 +64,18 @@ class MonthBalanceWidget : AppWidgetProvider() {
                 },
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
+            val locale = formatLocale()
+            val monthLabel = if (locale.language.startsWith("en")) {
+                ym.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.US))
+            } else {
+                ym.format(DateTimeFormatter.ofPattern("yyyy年M月", Locale.CHINA))
+            }
             ids.forEach { id ->
                 val views = RemoteViews(context.packageName, R.layout.widget_month_balance)
-                views.setTextViewText(R.id.widget_month, ym.format(Dates.ymCn))
-                views.setTextViewText(R.id.widget_income, Money.formatYuan(income))
-                views.setTextViewText(R.id.widget_expense, Money.formatYuan(expense))
-                views.setTextViewText(R.id.widget_balance, Money.formatYuan(balance, withSign = true))
+                views.setTextViewText(R.id.widget_month, monthLabel)
+                views.setTextViewText(R.id.widget_income, Money.formatYuan(income, locale = locale))
+                views.setTextViewText(R.id.widget_expense, Money.formatYuan(expense, locale = locale))
+                views.setTextViewText(R.id.widget_balance, Money.formatYuan(balance, withSign = true, locale = locale))
                 views.setTextColor(
                     R.id.widget_balance,
                     if (balance >= 0) 0xFF1B8A5A.toInt() else 0xFFD45A3C.toInt(),

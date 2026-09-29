@@ -24,39 +24,42 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.qingjizhang.app.R
 import com.qingjizhang.app.domain.BudgetStatus
 import com.qingjizhang.app.domain.CategorySlice
-import com.qingjizhang.app.domain.Money
 import com.qingjizhang.app.domain.MonthSummary
+import com.qingjizhang.app.ui.i18n.AppFormatters
+import com.qingjizhang.app.ui.i18n.displayName
+import com.qingjizhang.app.ui.i18n.localizedCategoryName
+import com.qingjizhang.app.ui.i18n.pieChartOtherCategoryName
 import com.qingjizhang.app.ui.theme.Expense
 import com.qingjizhang.app.ui.theme.Income
-import com.qingjizhang.app.ui.theme.InkMuted
 import com.qingjizhang.app.ui.theme.Over
 import com.qingjizhang.app.ui.theme.Warn
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import kotlin.math.min
 
 @Composable
 fun CategoryPieChart(
     slices: List<CategorySlice>,
     modifier: Modifier = Modifier,
-    centerLabel: String = "支出",
+    centerLabel: String = stringResource(R.string.chart_expense),
 ) {
     if (slices.isEmpty()) {
-        EmptyHint("这个时间段还没有数据")
+        EmptyHint(stringResource(R.string.chart_no_data))
         return
     }
+    val otherName = pieChartOtherCategoryName()
     val top = slices.take(7)
     val rest = slices.drop(7)
     val display = if (rest.isEmpty()) top else {
         val otherAmount = rest.sumOf { it.amountCents }
         val total = slices.sumOf { it.amountCents }.coerceAtLeast(1)
         top + CategorySlice(
-            category = top.last().category.copy(id = -1, name = "其他", colorArgb = 0xFF9A948A.toInt(), emoji = "…"),
+            category = top.last().category.copy(id = -1, name = otherName, colorArgb = 0xFF9A948A.toInt(), emoji = "…"),
             amountCents = otherAmount,
             ratio = otherAmount.toFloat() / total,
         )
@@ -82,8 +85,8 @@ fun CategoryPieChart(
                 }
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(centerLabel, color = InkMuted, fontSize = 12.sp)
-                Text(Money.formatYuan(total), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Text(centerLabel, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                Text(AppFormatters.formatYuan(total), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
             }
         }
         Spacer(Modifier.width(12.dp))
@@ -93,12 +96,12 @@ fun CategoryPieChart(
                     ColorDot(slice.category.colorArgb, size = 8)
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        slice.category.name,
+                        localizedCategoryName(slice.category.name),
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,
                     )
-                    Text(Money.formatYuan(slice.amountCents), style = MaterialTheme.typography.labelSmall)
+                    Text(AppFormatters.formatYuan(slice.amountCents), style = MaterialTheme.typography.labelSmall)
                 }
             }
         }
@@ -108,11 +111,10 @@ fun CategoryPieChart(
 @Composable
 fun TrendChart(months: List<MonthSummary>, modifier: Modifier = Modifier) {
     if (months.isEmpty()) {
-        EmptyHint("还没有趋势数据")
+        EmptyHint(stringResource(R.string.chart_no_trend))
         return
     }
     val max = months.maxOf { maxOf(it.incomeCents, it.expenseCents) }.coerceAtLeast(1)
-    val fmt = DateTimeFormatter.ofPattern("M月", Locale.CHINA)
     Column(modifier.fillMaxWidth()) {
         Canvas(
             Modifier
@@ -144,16 +146,16 @@ fun TrendChart(months: List<MonthSummary>, modifier: Modifier = Modifier) {
         Row(Modifier.fillMaxWidth()) {
             months.forEach { m ->
                 Text(
-                    m.yearMonth.format(fmt),
+                    AppFormatters.shortMonth(m.yearMonth),
                     modifier = Modifier.weight(1f),
                     fontSize = 10.sp,
-                    color = InkMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
         Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            LegendSwatch(Income, "收入")
-            LegendSwatch(Expense, "支出")
+            LegendSwatch(Income, stringResource(R.string.chart_income))
+            LegendSwatch(Expense, stringResource(R.string.chart_expense))
         }
     }
 }
@@ -163,7 +165,7 @@ private fun LegendSwatch(color: Color, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(10.dp).background(color, RoundedCornerShape(3.dp)))
         Spacer(Modifier.width(6.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = InkMuted)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -174,7 +176,7 @@ fun BudgetBar(status: BudgetStatus) {
         status.warn -> Warn
         else -> Income
     }
-    val name = status.category?.name ?: "每月总预算"
+    val name = status.category?.displayName() ?: stringResource(R.string.monthly_total_budget)
     val emoji = status.category?.emoji ?: "🎯"
     Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -184,7 +186,7 @@ fun BudgetBar(status: BudgetStatus) {
             }
             Text("$emoji $name", modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
             Text(
-                "${Money.formatYuan(status.spentCents)} / ${Money.formatYuan(status.budget.amountCents)}",
+                "${AppFormatters.formatYuan(status.spentCents)} / ${AppFormatters.formatYuan(status.budget.amountCents)}",
                 style = MaterialTheme.typography.labelLarge,
                 color = color,
             )
@@ -197,12 +199,18 @@ fun BudgetBar(status: BudgetStatus) {
             trackColor = color.copy(alpha = 0.16f),
         )
         val hint = when {
-            status.over -> "已超支 ${Money.formatYuan(status.spentCents - status.budget.amountCents)}"
-            status.warn -> "已用 ${(status.ratio * 100).toInt()}%，接近上限"
-            status.budget.amountCents > 0 -> "剩余 ${Money.formatYuan((status.budget.amountCents - status.spentCents).coerceAtLeast(0))}"
-            else -> "尚未设置金额"
+            status.over -> stringResource(
+                R.string.budget_over,
+                AppFormatters.formatYuan(status.spentCents - status.budget.amountCents),
+            )
+            status.warn -> stringResource(R.string.budget_warn, (status.ratio * 100).toInt())
+            status.budget.amountCents > 0 -> stringResource(
+                R.string.budget_remaining,
+                AppFormatters.formatYuan((status.budget.amountCents - status.spentCents).coerceAtLeast(0)),
+            )
+            else -> stringResource(R.string.budget_unset)
         }
         Spacer(Modifier.height(4.dp))
-        Text(hint, style = MaterialTheme.typography.labelSmall, color = InkMuted)
+        Text(hint, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

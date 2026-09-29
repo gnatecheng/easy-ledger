@@ -10,6 +10,7 @@ import com.qingjizhang.app.data.FinanceRepository
 import com.qingjizhang.app.data.ReceiptStore
 import com.qingjizhang.app.data.Seeder
 import com.qingjizhang.app.data.SettingsStore
+import com.qingjizhang.app.ui.i18n.LocaleHelper
 import com.qingjizhang.app.widget.MonthBalanceWidget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +34,8 @@ class QingJiZhangApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        val language = SettingsStore.readLanguageBlocking(this)
+        LocaleHelper.applyAppLanguage(language)
         container = AppContainer(this)
         container.scope.launch {
             container.seeder.seedIfNeeded()

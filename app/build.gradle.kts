@@ -1,3 +1,7 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -17,6 +21,8 @@ android {
         versionCode = 3
         versionName = "1.2.0"
         vectorDrawables.useSupportLibrary = true
+        val buildTimeIso = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US).format(Date())
+        buildConfigField("String", "BUILD_TIME_ISO", "\"$buildTimeIso\"")
     }
 
     signingConfigs {
@@ -78,6 +84,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-process:2.8.7")
     implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.appcompat:appcompat:1.7.0")
 
     val room = "2.6.1"
     implementation("androidx.room:room-runtime:$room")
