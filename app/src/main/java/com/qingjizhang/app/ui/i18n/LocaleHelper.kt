@@ -8,6 +8,9 @@ import com.qingjizhang.app.data.AppLanguage
 import java.util.Locale
 
 object LocaleHelper {
+    private const val PREFS_BOOT = "locale_boot"
+    private const val KEY_LANGUAGE = "app_language"
+
     fun resolveLocale(language: AppLanguage, systemLocale: Locale = Locale.getDefault()): Locale {
         return when (language) {
             AppLanguage.ZH -> Locale.SIMPLIFIED_CHINESE
@@ -26,6 +29,22 @@ object LocaleHelper {
             AppLanguage.EN -> "en"
         }
         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
+    }
+
+    /** Sync locale before DataStore is ready (cold start / Android 13+ per-app language). */
+    fun syncFromBlocking(context: Context): AppLanguage {
+        val stored = context.getSharedPreferences(PREFS_BOOT, Context.MODE_PRIVATE)
+            .getString(KEY_LANGUAGE, null)
+        val mode = AppLanguage.fromStorage(stored)
+        applyAppLanguage(mode)
+        return mode
+    }
+
+    fun persistForBoot(context: Context, language: AppLanguage) {
+        context.applicationContext.getSharedPreferences(PREFS_BOOT, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_LANGUAGE, language.storageKey)
+            .apply()
     }
 
     fun wrapContext(base: Context, locale: Locale): Context {

@@ -82,8 +82,6 @@ import com.qingjizhang.app.R
 import com.qingjizhang.app.data.AppLanguage
 import com.qingjizhang.app.data.ImportMode
 import com.qingjizhang.app.data.ThemeMode
-import com.qingjizhang.app.updateAppLanguage
-import androidx.activity.ComponentActivity
 import com.qingjizhang.app.ui.components.LanguagePicker
 import com.qingjizhang.app.ui.components.ThemeModePicker
 import com.qingjizhang.app.ui.i18n.LocaleHelper
@@ -452,11 +450,11 @@ class SettingsVm(private val app: AppContainer) : ViewModel() {
         viewModelScope.launch { app.settings.update { it.copy(themeMode = mode) } }
     }
 
-    fun setAppLanguage(language: AppLanguage, onApplied: () -> Unit) {
+    fun setAppLanguage(language: AppLanguage) {
         viewModelScope.launch {
             app.settings.update { it.copy(appLanguage = language) }
+            LocaleHelper.persistForBoot(app.application, language)
             LocaleHelper.applyAppLanguage(language)
-            onApplied()
         }
     }
 
@@ -487,9 +485,6 @@ fun AppearanceSettingsScreen(onBack: () -> Unit) {
     val app = LocalApp.current
     val vm: SettingsVm = viewModel(factory = SettingsVm.factory(app))
     val settings by vm.settings.collectAsState()
-    val context = LocalContext.current
-    val activity = context as? ComponentActivity
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -508,11 +503,7 @@ fun AppearanceSettingsScreen(onBack: () -> Unit) {
                 Spacer(Modifier.height(16.dp))
                 LanguagePicker(settings.appLanguage) { lang ->
                     if (lang != settings.appLanguage) {
-                        vm.setAppLanguage(lang) {
-                            activity?.let { act ->
-                                act.updateAppLanguage(settings.copy(appLanguage = lang))
-                            }
-                        }
+                        vm.setAppLanguage(lang)
                     }
                 }
             }
