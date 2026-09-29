@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "QingJiZhang"
+rootProject.name = "EasyLedger"
 include(":app")

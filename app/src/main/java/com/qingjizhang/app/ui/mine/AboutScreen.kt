@@ -29,12 +29,11 @@ import com.qingjizhang.app.BuildConfig
 import com.qingjizhang.app.R
 import com.qingjizhang.app.ui.components.AppCard
 
-private const val GITHUB_URL = "https://github.com/gnatecheng/qingjizhang"
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val githubUrl = stringResource(R.string.github_repo_url)
     Scaffold(
         topBar = {
             TopAppBar(
@@ -76,11 +75,11 @@ fun AboutScreen(onBack: () -> Unit) {
             AppCard {
                 Text(stringResource(R.string.about_github), fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(4.dp))
-                Text(GITHUB_URL, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
+                Text(githubUrl, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(12.dp))
                 OutlinedButton(
                     onClick = {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_URL)))
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(githubUrl)))
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {

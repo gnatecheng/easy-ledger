@@ -2,6 +2,8 @@
 
 本地优先的个人记账 Android 应用。数据保存在手机上的 SQLite（Room）里，无需登录、无需服务器。
 
+- **GitHub**：[gnatecheng/easy-ledger](https://github.com/gnatecheng/easy-ledger)（原 `qingjizhang` 仓库已重命名，旧 URL 会跳转）
+- **Releases**：[下载 APK](https://github.com/gnatecheng/easy-ledger/releases)
 - **应用名**：轻记账（英文界面：**Easy Ledger**）
 - **包名**：`com.qingjizhang.app`
 - **版本**：1.3.1
@@ -66,7 +68,14 @@ echo "sdk.dir=/path/to/Android/sdk" > local.properties
 
 演示签名仅用于自行安装，**不能**用于上架。密码见 `app/build.gradle.kts` 中的 `signingConfigs.release`。
 
-推送 `v*` 标签时，GitHub Actions 会发布调试包，附件文件名为 `easy-ledger-{versionName}-{tag}.apk`（例如 `easy-ledger-1.3.0-v1.3.0.apk`）。
+推送 `v*` 标签时，[Release APK 工作流](https://github.com/gnatecheng/easy-ledger/blob/main/.github/workflows/release-apk.yml) 会发布调试包，附件文件名为 `easy-ledger-{versionName}-{tag}.apk`（例如 `easy-ledger-1.3.1-v1.3.1.apk`）。
+
+## 相关开源项目
+
+同一作者维护的其它仓库（GitHub 重命名后请用新路径）：
+
+- [gnatecheng/c-week](https://github.com/gnatecheng/c-week)（原 `C-week`）
+- [gnatecheng/group-matters](https://github.com/gnatecheng/group-matters)（原 `class-activity-record`）
 
 ## 安装到手机
 
