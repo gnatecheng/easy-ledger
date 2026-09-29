@@ -38,9 +38,13 @@ class QingJiZhangApp : Application() {
         LocaleHelper.syncFromBlocking(this)
         container = AppContainer(this)
         runBlocking {
-            val language = SettingsStore.readLanguageBlocking(this@QingJiZhangApp)
-            LocaleHelper.persistForBoot(this@QingJiZhangApp, language)
-            LocaleHelper.applyAppLanguage(language)
+            if (LocaleHelper.usesSystemLocaleAsSourceOfTruth()) {
+                LocaleHelper.syncSystemLocalesIntoAppStorage(this@QingJiZhangApp, container.settings)
+            } else {
+                val language = SettingsStore.readLanguageBlocking(this@QingJiZhangApp)
+                LocaleHelper.persistForBoot(this@QingJiZhangApp, language)
+                LocaleHelper.applyAppLanguage(language)
+            }
         }
         container.scope.launch {
             container.seeder.seedIfNeeded()
@@ -50,6 +54,12 @@ class QingJiZhangApp : Application() {
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
                 container.scope.launch {
+                    if (LocaleHelper.usesSystemLocaleAsSourceOfTruth()) {
+                        LocaleHelper.syncSystemLocalesIntoAppStorage(
+                            this@QingJiZhangApp,
+                            container.settings,
+                        )
+                    }
                     container.repo.generateDueRecurring(LocalDate.now())
                     MonthBalanceWidget.refresh(this@QingJiZhangApp)
                 }
