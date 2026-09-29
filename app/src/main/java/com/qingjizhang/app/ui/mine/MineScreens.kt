@@ -88,6 +88,7 @@ import com.qingjizhang.app.ui.components.LanguagePicker
 import com.qingjizhang.app.ui.components.ThemeModePicker
 import com.qingjizhang.app.ui.i18n.LocaleHelper
 import com.qingjizhang.app.ui.i18n.displayName
+import com.qingjizhang.app.ui.i18n.localizedDemoNote
 import com.qingjizhang.app.ui.i18n.localizedLabel
 import androidx.compose.ui.res.stringResource
 import com.qingjizhang.app.data.ImportPreview
@@ -792,7 +793,10 @@ fun ImportExportScreen(onBack: () -> Unit) {
                     Spacer(Modifier.height(8.dp))
                     val rows = p.csvRows.take(8)
                     rows.forEach { r ->
-                        Text("${r.date} ${r.type} ${r.amount} ${r.category} ${r.note}", style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            "${r.date} ${r.type} ${r.amount} ${r.category} ${localizedDemoNote(r.note)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
                     }
                     if (p.csvRows.size > 8) {
                         Text(stringResource(R.string.preview_rows_more, p.csvRows.size), color = InkMuted)

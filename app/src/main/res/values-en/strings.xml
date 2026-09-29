@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">QingJiZhang</string>
+    <string name="app_name">Easy Ledger</string>
     <string name="widget_description">This month\'s income, expenses, and balance</string>
     <string name="widget_label">Monthly balance</string>
     <string name="widget_income">Income</string>
@@ -121,7 +121,7 @@
     <string name="menu_reminders_sub">Large txn threshold, inactivity nudge</string>
     <string name="menu_about">About</string>
     <string name="menu_about_sub">Version, updates &amp; open source</string>
-    <string name="about_title">About QingJiZhang</string>
+    <string name="about_title">About Easy Ledger</string>
     <string name="about_tagline">Local-first bookkeeping. Data stays on this phone.</string>
     <string name="about_version">Version</string>
     <string name="about_version_value">%1$s (%2$d)</string>
@@ -186,8 +186,8 @@
     <string name="import_skip_dupes">Import, skip duplicates</string>
     <string name="import_all">Import all (allow duplicates)</string>
     <string name="import_replace">Replace existing data</string>
-    <string name="export_csv_filename">qingjizhang-%1$s.csv</string>
-    <string name="export_json_filename">qingjizhang-backup-%1$s.json</string>
+    <string name="export_csv_filename">easy-ledger-%1$s.csv</string>
+    <string name="export_json_filename">easy-ledger-backup-%1$s.json</string>
 
     <string name="txns_title">Transactions</string>
     <string name="search_hint">Search notes &amp; tags</string>
@@ -303,13 +303,13 @@
     <string name="delete_txn_title">Delete this transaction?</string>
     <string name="delete_txn_body">Account balances will be adjusted accordingly.</string>
 
-    <string name="share_report_title">QingJiZhang · Monthly report</string>
+    <string name="share_report_title">Easy Ledger · Monthly report</string>
     <string name="share_report_subtitle">Local-only data on this device</string>
     <string name="share_expense_top">Top expense categories</string>
     <string name="share_no_expense">No expense categories this month</string>
     <string name="share_month_image_chooser">Share report image</string>
     <string name="share_export_pdf_chooser">Share report PDF</string>
-    <string name="share_report_filename">qingjizhang-%1$s</string>
+    <string name="share_report_filename">easy-ledger-%1$s</string>
 
     <string name="app_container_missing">AppContainer not provided</string>
 </resources>

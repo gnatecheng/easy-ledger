@@ -42,6 +42,7 @@ import com.qingjizhang.app.domain.TxnKind
 import com.qingjizhang.app.ui.i18n.AppFormatters
 import com.qingjizhang.app.ui.i18n.displayName
 import com.qingjizhang.app.ui.i18n.localizedCategoryName
+import com.qingjizhang.app.ui.i18n.localizedDemoNote
 import com.qingjizhang.app.ui.i18n.localizedLabel
 import com.qingjizhang.app.ui.theme.Expense
 import com.qingjizhang.app.ui.theme.Income
@@ -192,7 +193,7 @@ fun TxnRow(txn: Txn, onClick: () -> Unit) {
                 }
                 if (txn.note.isNotBlank()) {
                     append(" · ")
-                    append(txn.note)
+                    append(localizedDemoNote(txn.note))
                 }
             }
             Text(

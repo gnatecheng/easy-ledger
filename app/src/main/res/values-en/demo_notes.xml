@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="demo_note_monthly_salary_deposit">Monthly salary deposit</string>
+    <string name="demo_note_quarterly_bonus">Quarterly bonus</string>
+    <string name="demo_note_fund_yield">Balance fund yield</string>
+    <string name="demo_note_breakfast">Breakfast</string>
+    <string name="demo_note_lunch">Lunch</string>
+    <string name="demo_note_dinner">Dinner</string>
+    <string name="demo_note_coffee">Coffee</string>
+    <string name="demo_note_delivery">Delivery</string>
+    <string name="demo_note_grocery_snacks">Grocery snacks</string>
+    <string name="demo_note_subway">Subway</string>
+    <string name="demo_note_subway_commute">Subway commute</string>
+    <string name="demo_note_bus">Bus</string>
+    <string name="demo_note_taxi">Ride-hail</string>
+    <string name="demo_note_bike_share">Bike share</string>
+    <string name="demo_note_household">Household goods</string>
+    <string name="demo_note_clothes">Clothes</string>
+    <string name="demo_note_tech_accessory">Tech accessory</string>
+    <string name="demo_note_rent">Rent</string>
+    <string name="demo_note_rent_this_month">Rent this month</string>
+    <string name="demo_note_utilities">Utilities</string>
+    <string name="demo_note_property_fee">Property fee</string>
+    <string name="demo_note_laundry">Laundry detergent</string>
+    <string name="demo_note_tissues">Tissues</string>
+    <string name="demo_note_movie">Movie</string>
+    <string name="demo_note_membership">Membership</string>
+    <string name="demo_note_group_dining">Group dining</string>
+    <string name="demo_note_phone_bill">Phone bill</string>
+    <string name="demo_note_broadband">Broadband</string>
+    <string name="demo_note_medicine">Medicine</string>
+    <string name="demo_note_checkup">Health check-up</string>
+    <string name="demo_note_online_course">Online course</string>
+    <string name="demo_note_books">Books</string>
+    <string name="demo_note_gift">Gift</string>
+    <string name="demo_note_red_packet">Red packet</string>
+    <string name="demo_note_headphones">Headphones</string>
+    <string name="demo_note_to_alipay">Transfer to Alipay</string>
+    <string name="demo_note_cash_out">Cash withdrawal</string>
+    <string name="demo_note_living_transfer">Transfer for living expenses</string>
+    <string name="demo_note_monthly_salary">Monthly salary</string>
+    <string name="demo_note_subway_commute_rule">Subway commute</string>
+    <string name="demo_note_recurring_generated">Recurring entry</string>
+</resources>
