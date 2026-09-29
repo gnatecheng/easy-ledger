@@ -35,6 +35,7 @@ import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -116,6 +117,7 @@ fun MineScreen(
     onAccounts: () -> Unit,
     onRecurring: () -> Unit,
     onImportExport: () -> Unit,
+    onAppearance: () -> Unit,
     onSettings: () -> Unit,
     onAbout: () -> Unit,
 ) {
@@ -147,6 +149,8 @@ fun MineScreen(
             MenuRow(stringResource(R.string.menu_recurring), stringResource(R.string.menu_recurring_sub), Icons.Outlined.Repeat, onRecurring)
             HorizontalDivider()
             MenuRow(stringResource(R.string.menu_import_export), stringResource(R.string.menu_import_export_sub), Icons.Outlined.FileDownload, onImportExport)
+            HorizontalDivider()
+            MenuRow(stringResource(R.string.menu_appearance), stringResource(R.string.menu_appearance_sub), Icons.Outlined.Palette, onAppearance)
             HorizontalDivider()
             MenuRow(stringResource(R.string.menu_reminders), stringResource(R.string.menu_reminders_sub), Icons.Outlined.Notifications, onSettings)
             HorizontalDivider()
@@ -478,23 +482,17 @@ class SettingsVm(private val app: AppContainer) : ViewModel() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun AppearanceSettingsScreen(onBack: () -> Unit) {
     val app = LocalApp.current
     val vm: SettingsVm = viewModel(factory = SettingsVm.factory(app))
     val settings by vm.settings.collectAsState()
-    var threshold by remember(settings.largeTxnThresholdCents) { mutableStateOf(Money.formatPlain(settings.largeTxnThresholdCents)) }
-    var days by remember(settings.inactivityNudgeDays) { mutableStateOf(settings.inactivityNudgeDays.toString()) }
-    var confirmClear by remember { mutableStateOf(false) }
-    var confirmReset by remember { mutableStateOf(false) }
-    val snack = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val activity = context as? ComponentActivity
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.settings_title)) },
+                title = { Text(stringResource(R.string.appearance_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back))
@@ -502,12 +500,9 @@ fun SettingsScreen(onBack: () -> Unit) {
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snack) },
     ) { padding ->
         Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             AppCard {
-                Text(stringResource(R.string.settings_appearance), fontWeight = FontWeight.Medium)
-                Spacer(Modifier.height(12.dp))
                 ThemeModePicker(settings.themeMode, vm::setThemeMode)
                 Spacer(Modifier.height(16.dp))
                 LanguagePicker(settings.appLanguage) { lang ->
@@ -520,6 +515,42 @@ fun SettingsScreen(onBack: () -> Unit) {
                     }
                 }
             }
+            Text(
+                stringResource(R.string.dark_mode_hint),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsScreen(onBack: () -> Unit) {
+    val app = LocalApp.current
+    val vm: SettingsVm = viewModel(factory = SettingsVm.factory(app))
+    val settings by vm.settings.collectAsState()
+    var threshold by remember(settings.largeTxnThresholdCents) { mutableStateOf(Money.formatPlain(settings.largeTxnThresholdCents)) }
+    var days by remember(settings.inactivityNudgeDays) { mutableStateOf(settings.inactivityNudgeDays.toString()) }
+    var confirmClear by remember { mutableStateOf(false) }
+    var confirmReset by remember { mutableStateOf(false) }
+    val snack = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.menu_reminders)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back))
+                    }
+                },
+            )
+        },
+        snackbarHost = { SnackbarHost(snack) },
+    ) { padding ->
+        Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             AppCard {
                 Text(stringResource(R.string.large_txn_title), fontWeight = FontWeight.Medium)
                 Text(stringResource(R.string.large_txn_desc), color = InkMuted, style = MaterialTheme.typography.bodyMedium)

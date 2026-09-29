@@ -114,6 +114,9 @@
     <string name="menu_recurring_sub">Daily / weekly / monthly auto entries</string>
     <string name="menu_import_export">Import / export</string>
     <string name="menu_import_export_sub">CSV, JSON backup &amp; restore</string>
+    <string name="menu_appearance">Appearance &amp; language</string>
+    <string name="menu_appearance_sub">Theme mode and app language</string>
+    <string name="appearance_title">Appearance &amp; language</string>
     <string name="menu_reminders">Reminders</string>
     <string name="menu_reminders_sub">Large txn threshold, inactivity nudge</string>
     <string name="menu_about">About</string>

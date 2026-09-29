@@ -125,6 +125,9 @@
     <string name="menu_recurring_sub">每天 / 每周 / 每月自动入账</string>
     <string name="menu_import_export">导入 / 导出</string>
     <string name="menu_import_export_sub">CSV、JSON 备份与恢复</string>
+    <string name="menu_appearance">外观与语言</string>
+    <string name="menu_appearance_sub">主题模式与应用语言</string>
+    <string name="appearance_title">外观与语言</string>
     <string name="menu_reminders">提醒设置</string>
     <string name="menu_reminders_sub">大额阈值、未记账提醒</string>
     <string name="menu_about">关于</string>

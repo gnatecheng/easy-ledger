@@ -36,6 +36,7 @@ import com.qingjizhang.app.ui.mine.AccountsScreen
 import com.qingjizhang.app.ui.mine.CategoriesScreen
 import com.qingjizhang.app.ui.mine.ImportExportScreen
 import com.qingjizhang.app.ui.mine.MineScreen
+import com.qingjizhang.app.ui.mine.AppearanceSettingsScreen
 import com.qingjizhang.app.ui.mine.SettingsScreen
 import com.qingjizhang.app.ui.recurring.RecurringEditScreen
 import com.qingjizhang.app.ui.recurring.RecurringListScreen
@@ -138,6 +139,7 @@ fun QingJiZhangRoot() {
                     onAccounts = { nav.navigate("accounts") },
                     onRecurring = { nav.navigate("recurring") },
                     onImportExport = { nav.navigate("import") },
+                    onAppearance = { nav.navigate("appearance") },
                     onSettings = { nav.navigate("settings") },
                     onAbout = { nav.navigate("about") },
                 )
@@ -167,6 +169,7 @@ fun QingJiZhangRoot() {
                 )
             }
             composable("import") { ImportExportScreen(onBack = { nav.popBackStack() }) }
+            composable("appearance") { AppearanceSettingsScreen(onBack = { nav.popBackStack() }) }
             composable("settings") { SettingsScreen(onBack = { nav.popBackStack() }) }
             composable("about") { AboutScreen(onBack = { nav.popBackStack() }) }
         }
