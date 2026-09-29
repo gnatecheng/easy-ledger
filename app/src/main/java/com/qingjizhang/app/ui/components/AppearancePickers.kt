@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.qingjizhang.app.R
 import com.qingjizhang.app.data.AppLanguage
@@ -35,7 +36,9 @@ fun ThemeModePicker(selected: ThemeMode, onSelect: (ThemeMode) -> Unit) {
                                 ThemeMode.LIGHT -> stringResource(R.string.theme_light)
                                 ThemeMode.DARK -> stringResource(R.string.theme_dark)
                             },
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     },
                 )
@@ -62,7 +65,9 @@ fun LanguagePicker(selected: AppLanguage, onSelect: (AppLanguage) -> Unit) {
                                 AppLanguage.ZH -> stringResource(R.string.language_zh)
                                 AppLanguage.EN -> stringResource(R.string.language_en)
                             },
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     },
                 )

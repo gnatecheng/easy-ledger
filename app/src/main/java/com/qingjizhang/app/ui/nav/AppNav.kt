@@ -8,6 +8,7 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -20,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -79,7 +81,14 @@ fun QingJiZhangRoot() {
                             icon = {
                                 Icon(tab.icon, contentDescription = stringResource(tab.labelRes))
                             },
-                            label = { Text(stringResource(tab.labelRes)) },
+                            label = {
+                                Text(
+                                    stringResource(tab.labelRes),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
+                            },
                         )
                     }
                 }
