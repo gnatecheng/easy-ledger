@@ -18,8 +18,8 @@ android {
         applicationId = "com.qingjizhang.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 4
+        versionName = "1.3.0"
         vectorDrawables.useSupportLibrary = true
         val buildTimeIso = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US).format(Date())
         buildConfigField("String", "BUILD_TIME_ISO", "\"$buildTimeIso\"")
