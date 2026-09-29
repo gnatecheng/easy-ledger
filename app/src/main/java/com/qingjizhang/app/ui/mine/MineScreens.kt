@@ -536,6 +536,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     var confirmReset by remember { mutableStateOf(false) }
     val snack = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
