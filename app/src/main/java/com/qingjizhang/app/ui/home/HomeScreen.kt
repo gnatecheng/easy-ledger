@@ -64,13 +64,12 @@ import com.qingjizhang.app.ui.components.MoneyText
 import com.qingjizhang.app.ui.components.SectionTitle
 import com.qingjizhang.app.ui.components.TxnRow
 import com.qingjizhang.app.ui.share.MonthShare
-import com.qingjizhang.app.ui.theme.ExpenseSoft
-import com.qingjizhang.app.ui.theme.IncomeSoft
 import com.qingjizhang.app.ui.theme.Over
 import androidx.compose.ui.res.stringResource
-import com.qingjizhang.app.ui.theme.OverSoft
-import com.qingjizhang.app.ui.theme.Warn
-import com.qingjizhang.app.ui.theme.WarnSoft
+import com.qingjizhang.app.ui.theme.financeAlertLargeExpenseColors
+import com.qingjizhang.app.ui.theme.financeAlertNudgeColors
+import com.qingjizhang.app.ui.theme.financeAlertOverColors
+import com.qingjizhang.app.ui.theme.financeAlertWarnColors
 import com.qingjizhang.app.ui.vmFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -324,6 +323,7 @@ object FinanceAlerts {
             val key = "over-${s.budget.id}"
             if (key !in dismissed) {
                 val name = s.category?.displayName() ?: totalBudgetLabel
+                val (container, content) = financeAlertOverColors()
                 items += Item(
                     key,
                     stringResource(R.string.alert_budget_over_title),
@@ -333,8 +333,8 @@ object FinanceAlerts {
                         AppFormatters.formatYuan(s.spentCents),
                         AppFormatters.formatYuan(s.spentCents - s.budget.amountCents),
                     ),
-                    OverSoft,
-                    Over,
+                    container,
+                    content,
                 )
             }
         }
@@ -342,18 +342,20 @@ object FinanceAlerts {
             val key = "warn-${s.budget.id}"
             if (key !in dismissed) {
                 val name = s.category?.displayName() ?: totalBudgetLabel
+                val (container, content) = financeAlertWarnColors()
                 items += Item(
                     key,
                     stringResource(R.string.alert_budget_warn_title),
                     stringResource(R.string.alert_budget_warn_body, name, (s.ratio * 100).toInt()),
-                    WarnSoft,
-                    Warn,
+                    container,
+                    content,
                 )
             }
         }
         ui.largeTxns.take(2).forEach { t ->
             val key = "large-${t.id}"
             if (key !in dismissed) {
+                val (container, content) = financeAlertLargeExpenseColors()
                 items += Item(
                     key,
                     stringResource(R.string.alert_large_txn_title),
@@ -363,8 +365,8 @@ object FinanceAlerts {
                         AppFormatters.formatYuan(t.amountCents),
                         AppFormatters.formatYuan(ui.settings.largeTxnThresholdCents),
                     ),
-                    ExpenseSoft,
-                    com.qingjizhang.app.ui.theme.Expense,
+                    container,
+                    content,
                 )
             }
         }
@@ -380,12 +382,13 @@ object FinanceAlerts {
                     LocalDate.now(),
                 ) < 1
             if (gap >= days && !recentlyDismissed) {
+                val (container, content) = financeAlertNudgeColors()
                 items += Item(
                     "nudge",
                     stringResource(R.string.alert_nudge_title),
                     stringResource(R.string.alert_nudge_body, gap.toInt()),
-                    IncomeSoft,
-                    com.qingjizhang.app.ui.theme.TealDark,
+                    container,
+                    content,
                 )
             }
         }

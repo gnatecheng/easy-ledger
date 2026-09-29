@@ -89,19 +89,25 @@ fun CategoryPieChart(
                 Text(AppFormatters.formatYuan(total), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
             }
         }
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Spacer(Modifier.width(8.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             display.forEach { slice ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                     ColorDot(slice.category.colorArgb, size = 8)
                     Spacer(Modifier.width(6.dp))
-                    Text(
-                        localizedCategoryName(slice.category.name),
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                    )
-                    Text(AppFormatters.formatYuan(slice.amountCents), style = MaterialTheme.typography.labelSmall)
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            localizedCategoryName(slice.category.name),
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 2,
+                            lineHeight = 16.sp,
+                        )
+                        Text(
+                            AppFormatters.formatYuan(slice.amountCents),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }
@@ -184,7 +190,13 @@ fun BudgetBar(status: BudgetStatus) {
                 ColorDot(status.category.colorArgb)
                 Spacer(Modifier.width(8.dp))
             }
-            Text("$emoji $name", modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
+            Text(
+                "$emoji $name",
+                modifier = Modifier.weight(1f),
+                fontWeight = FontWeight.Medium,
+                maxLines = 2,
+                lineHeight = 18.sp,
+            )
             Text(
                 "${AppFormatters.formatYuan(status.spentCents)} / ${AppFormatters.formatYuan(status.budget.amountCents)}",
                 style = MaterialTheme.typography.labelLarge,

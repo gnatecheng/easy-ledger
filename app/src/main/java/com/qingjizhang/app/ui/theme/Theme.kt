@@ -29,6 +29,7 @@ private val LightScheme = lightColorScheme(
     outline = Color(0xFFD5D0C8),
     error = Over,
     errorContainer = OverSoft,
+    onErrorContainer = Over,
 )
 
 private val DarkScheme = darkColorScheme(
@@ -50,6 +51,7 @@ private val DarkScheme = darkColorScheme(
     outline = Color(0xFF4A5554),
     error = Color(0xFFFFB4AB),
     errorContainer = Color(0xFF8C1D18),
+    onErrorContainer = Color(0xFFFFDAD6),
 )
 
 @Composable

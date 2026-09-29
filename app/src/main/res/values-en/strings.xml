@@ -8,7 +8,7 @@
     <string name="widget_balance">Balance</string>
 
     <string name="tab_home">Home</string>
-    <string name="tab_txns">Transactions</string>
+    <string name="tab_txns">Entries</string>
     <string name="tab_stats">Stats</string>
     <string name="tab_budgets">Budgets</string>
     <string name="tab_mine">Me</string>
@@ -46,12 +46,12 @@
     <string name="cat_transport">Transport</string>
     <string name="cat_shopping">Shopping</string>
     <string name="cat_housing">Housing</string>
-    <string name="cat_daily">Daily goods</string>
-    <string name="cat_entertainment">Entertainment</string>
+    <string name="cat_daily">Daily</string>
+    <string name="cat_entertainment">Fun</string>
     <string name="cat_medical">Medical</string>
     <string name="cat_education">Education</string>
-    <string name="cat_communication">Communication</string>
-    <string name="cat_gifts">Gifts &amp; social</string>
+    <string name="cat_communication">Phone &amp; Internet</string>
+    <string name="cat_gifts">Gifts</string>
     <string name="cat_pets">Pets</string>
     <string name="cat_salary">Salary</string>
     <string name="cat_bonus">Bonus</string>
