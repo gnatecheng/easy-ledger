@@ -5,6 +5,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
@@ -54,6 +56,12 @@ private val DarkScheme = darkColorScheme(
     onErrorContainer = Color(0xFFFFDAD6),
 )
 
+/** Matches [QingJiZhangTheme]'s effective light/dark mode (app setting), not the system theme alone. */
+val LocalDarkTheme = staticCompositionLocalOf { false }
+
+@Composable
+fun isAppInDarkTheme(): Boolean = LocalDarkTheme.current
+
 @Composable
 fun QingJiZhangTheme(
     darkTheme: Boolean = false,
@@ -68,9 +76,11 @@ fun QingJiZhangTheme(
             WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
         }
     }
-    MaterialTheme(
-        colorScheme = scheme,
-        typography = Typography,
-        content = content,
-    )
+    CompositionLocalProvider(LocalDarkTheme provides darkTheme) {
+        MaterialTheme(
+            colorScheme = scheme,
+            typography = Typography,
+            content = content,
+        )
+    }
 }

@@ -184,6 +184,8 @@ fun BudgetBar(status: BudgetStatus) {
     }
     val name = status.category?.displayName() ?: stringResource(R.string.monthly_total_budget)
     val emoji = status.category?.emoji ?: "🎯"
+    val amountText = "${AppFormatters.formatYuan(status.spentCents)} / ${AppFormatters.formatYuan(status.budget.amountCents)}"
+    val leadingInset = if (status.category != null) 8.dp + 10.dp else 0.dp
     Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (status.category != null) {
@@ -197,12 +199,14 @@ fun BudgetBar(status: BudgetStatus) {
                 maxLines = 2,
                 lineHeight = 18.sp,
             )
-            Text(
-                "${AppFormatters.formatYuan(status.spentCents)} / ${AppFormatters.formatYuan(status.budget.amountCents)}",
-                style = MaterialTheme.typography.labelLarge,
-                color = color,
-            )
         }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            amountText,
+            modifier = Modifier.padding(start = leadingInset),
+            style = MaterialTheme.typography.labelLarge,
+            color = color,
+        )
         Spacer(Modifier.height(8.dp))
         LinearProgressIndicator(
             progress = { min(status.ratio, 1f) },

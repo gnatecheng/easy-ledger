@@ -64,7 +64,6 @@ import com.qingjizhang.app.ui.components.MoneyText
 import com.qingjizhang.app.ui.components.SectionTitle
 import com.qingjizhang.app.ui.components.TxnRow
 import com.qingjizhang.app.ui.share.MonthShare
-import com.qingjizhang.app.ui.theme.Over
 import androidx.compose.ui.res.stringResource
 import com.qingjizhang.app.ui.theme.financeAlertLargeExpenseColors
 import com.qingjizhang.app.ui.theme.financeAlertNudgeColors
@@ -189,7 +188,7 @@ fun HomeScreen(
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 140.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 160.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
