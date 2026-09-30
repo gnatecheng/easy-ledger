@@ -121,3 +121,8 @@ app/src/main/java/com/qingjizhang/app/
 ## Privacy
 
 No accounts, no cloud sync. Backup files leave the device only when you share or save them.
+
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
