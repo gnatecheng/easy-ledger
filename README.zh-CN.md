@@ -61,18 +61,44 @@ echo "sdk.dir=/path/to/Android/sdk" > local.properties
 # 调试包
 ./gradlew :app:assembleDebug
 
-# 可安装的签名 Release 包（仓库内含演示用 keystore）
+# Release 包（需配置签名环境变量，见下文）
 ./gradlew :app:assembleRelease
 ```
 
 产物位置：
 
-- Debug：`app/build/outputs/apk/debug/app-debug.apk`
-- Release：`app/build/outputs/apk/release/app-release.apk`
+- Debug：`app/build/outputs/apk/debug/app-debug.apk`（`com.qingjizhang.app.debug`，可调试）
+- Release：`app/build/outputs/apk/release/app-release.apk`（`com.qingjizhang.app`，仅在提供 keystore 环境变量时签名）
 
-演示签名仅用于自行安装，**不能**用于上架。密码见 `app/build.gradle.kts` 中的 `signingConfigs.release`。
+本地未配置签名时，`assembleRelease` 会产出**未签名**的 release 变体；日常自装请用 `assembleDebug`。
 
-推送 `v*` 标签时，[Release APK 工作流](https://github.com/gnatecheng/easy-ledger/blob/main/.github/workflows/release-apk.yml) 会发布调试包，附件文件名为 `easy-ledger-{versionName}-{tag}.apk`（例如 `easy-ledger-1.3.1-v1.3.1.apk`）。
+### 签名与 Release
+
+GitHub Actions [`.github/workflows/release-apk.yml`](.github/workflows/release-apk.yml) 在推送 **semver 标签** `vX.Y.Z`（须与 `app/build.gradle.kts` 的 `versionName` **一致**）时构建**已签名、不可调试**的 release APK。若缺少下列 Secrets，工作流会**明确失败**，不会发布 debug 包。
+
+| Secret | 说明 |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | 发布 keystore 文件的 Base64 |
+| `ANDROID_KEYSTORE_PASSWORD` | keystore 密码 |
+| `ANDROID_KEY_ALIAS` | 密钥别名 |
+| `ANDROID_KEY_PASSWORD` | （可选）密钥密码；省略则使用 store 密码 |
+
+**本地签名 release**（可选）：将 `release.keystore` 放在仓库根目录（**切勿提交**），设置 `ANDROID_KEYSTORE_FILE`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS` 及可选的 `ANDROID_KEY_PASSWORD`，再执行 `./gradlew :app:assembleRelease`。
+
+**Release 标签**：仅 semver（如 `v1.3.1`），不要用日期标签。
+
+发布附件文件名：`easy-ledger-{versionName}.apk`（例如 `easy-ledger-1.3.1.apk`）。
+
+### 从 debug 自装版迁移
+
+此前 GitHub Release 与本地 **debug** 包使用 applicationId **`com.qingjizhang.app.debug`**。新的**签名 release** 使用 **`com.qingjizhang.app`**，系统视为**不同应用**，**无法覆盖安装**旧包。
+
+1. 在**旧**应用中：**我的 → 备份**，导出 **JSON 备份**并妥善保存。
+2. 安装新的签名 release APK（`easy-ledger-*.apk`）。
+3. 在新应用中从 JSON **恢复**数据。
+4. 确认无误后卸载旧 debug 应用。
+
+在导出并恢复之前，账本数据只存在于旧应用的私有存储中。
 
 ## 相关开源项目
 
@@ -121,7 +147,6 @@ app/src/main/java/com/qingjizhang/app/
 ## 隐私
 
 没有账号系统，没有网络同步。备份文件只有你分享或保存时才会离开本机。
-
 
 ## 许可证
 

@@ -14,3 +14,7 @@ local.properties
 app/release/
 app/debug/
 *.log
+*.jks
+*.keystore
+keystore.properties
+release.keystore

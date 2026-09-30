@@ -61,18 +61,44 @@ echo "sdk.dir=/path/to/Android/sdk" > local.properties
 # Debug APK
 ./gradlew :app:assembleDebug
 
-# Signed release APK (demo keystore in repo)
+# Release APK (requires signing env vars — see below)
 ./gradlew :app:assembleRelease
 ```
 
 Output:
 
-- Debug: `app/build/outputs/apk/debug/app-debug.apk`
-- Release: `app/build/outputs/apk/release/app-release.apk`
+- Debug: `app/build/outputs/apk/debug/app-debug.apk` (`com.qingjizhang.app.debug`, debuggable)
+- Release: `app/build/outputs/apk/release/app-release.apk` (`com.qingjizhang.app`, signed only when keystore env vars are set)
 
-The demo signing config is for sideloading only—not for store upload. Passwords are in `signingConfigs.release` in `app/build.gradle.kts`.
+Without signing secrets locally, `./gradlew :app:assembleRelease` still builds an **unsigned** release variant; use `assembleDebug` for everyday sideloading.
 
-When you push a `v*` tag, the [Release APK workflow](https://github.com/gnatecheng/easy-ledger/blob/main/.github/workflows/release-apk.yml) publishes a debug build asset named `easy-ledger-{versionName}-{tag}.apk` (e.g. `easy-ledger-1.3.1-v1.3.1.apk`).
+### Signing & release
+
+GitHub Actions [`.github/workflows/release-apk.yml`](.github/workflows/release-apk.yml) builds a **signed, non-debuggable** release APK when you push a **semver tag** `vX.Y.Z` that **must equal** `versionName` in `app/build.gradle.kts`. If required secrets are missing, the workflow **fails with a clear error**—it will not publish a debug APK.
+
+| Secret | Purpose |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | Base64 of the release keystore file |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
+| `ANDROID_KEY_ALIAS` | Key alias |
+| `ANDROID_KEY_PASSWORD` | (Optional) key password; defaults to store password |
+
+**Local signed release** (optional): place `release.keystore` in the repo root (never commit) and set `ANDROID_KEYSTORE_FILE`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and optionally `ANDROID_KEY_PASSWORD`, then `./gradlew :app:assembleRelease`.
+
+**Release tags:** semver only (e.g. `v1.3.1`); do not use date tags.
+
+Published asset name: `easy-ledger-{versionName}.apk` (e.g. `easy-ledger-1.3.1.apk`).
+
+### Migrating from debug sideload builds
+
+Earlier GitHub releases and local **debug** builds use applicationId **`com.qingjizhang.app.debug`**. New **signed release** builds use **`com.qingjizhang.app`**—Android treats them as **different apps**, so install does **not** overwrite the old one.
+
+1. In the **old** app: **Mine → Backup**, export a **JSON backup** and keep the file safe.
+2. Install the new signed release APK (`easy-ledger-*.apk`).
+3. Open the new app and **restore** from that JSON backup.
+4. Uninstall the old debug app when you are satisfied.
+
+Your ledger data is only in the old app’s private storage until you export and restore.
 
 ## Related open-source projects
 
@@ -121,7 +147,6 @@ app/src/main/java/com/qingjizhang/app/
 ## Privacy
 
 No accounts, no cloud sync. Backup files leave the device only when you share or save them.
-
 
 ## License
 
