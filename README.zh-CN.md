@@ -121,3 +121,8 @@ app/src/main/java/com/qingjizhang/app/
 ## 隐私
 
 没有账号系统，没有网络同步。备份文件只有你分享或保存时才会离开本机。
+
+
+## 许可证
+
+本项目采用 [MIT License](LICENSE)。
