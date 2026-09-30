@@ -26,26 +26,38 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            storeFile = file("qingjizhang-release.jks")
-            storePassword = "qingjizhang"
-            keyAlias = "qingjizhang"
-            keyPassword = "qingjizhang"
+        val keystorePath = System.getenv("ANDROID_KEYSTORE_FILE")
+        val keystoreFile = when {
+            keystorePath != null -> file(keystorePath)
+            rootProject.file("release.keystore").exists() -> rootProject.file("release.keystore")
+            else -> null
+        }
+        if (keystoreFile != null) {
+            create("release") {
+                storeFile = keystoreFile
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                    ?: error("ANDROID_KEYSTORE_PASSWORD is required when a release keystore is present")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                    ?: error("ANDROID_KEY_ALIAS is required when a release keystore is present")
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+                    ?: System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                    ?: error("ANDROID_KEY_PASSWORD or ANDROID_KEYSTORE_PASSWORD is required")
+            }
         }
     }
 
     buildTypes {
         release {
+            isDebuggable = false
             isMinifyEnabled = false
             isShrinkResources = false
-            signingConfig = signingConfigs.getByName("release")
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
         }
         debug {
-            signingConfig = signingConfigs.getByName("release")
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }
