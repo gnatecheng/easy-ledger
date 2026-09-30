@@ -10,7 +10,7 @@
 - **Releases**：[下载 APK](https://github.com/gnatecheng/easy-ledger/releases)
 - **应用名**：轻记账（英文界面：**Easy Ledger**）
 - **包名**：`com.qingjizhang.app`
-- **版本**：1.3.2
+- **版本**：1.3.1
 - **最低系统**：Android 8.0（API 26）
 - **技术**：Kotlin、Jetpack Compose、Material 3、Room、Navigation Compose
 
@@ -34,10 +34,6 @@
 - **演示数据**：第一次打开会写入示例流水，可在「我的 → 提醒设置」中清除或恢复。
 
 ## 更新记录
-
-### 1.3.2
-
-- 修复应用内切换 English/中文无效的问题（AppCompat 语言、系统「应用语言」同步）。
 
 ### 1.3.1
 
@@ -76,7 +72,7 @@ echo "sdk.dir=/path/to/Android/sdk" > local.properties
 
 演示签名仅用于自行安装，**不能**用于上架。密码见 `app/build.gradle.kts` 中的 `signingConfigs.release`。
 
-推送 `v*` 标签时，[Release APK 工作流](https://github.com/gnatecheng/easy-ledger/blob/main/.github/workflows/release-apk.yml) 会发布调试包，附件文件名为 `easy-ledger-{versionName}-{tag}.apk`（例如 `easy-ledger-1.3.2-v1.3.2.apk`）。
+推送 `v*` 标签时，[Release APK 工作流](https://github.com/gnatecheng/easy-ledger/blob/main/.github/workflows/release-apk.yml) 会发布调试包，附件文件名为 `easy-ledger-{versionName}-{tag}.apk`（例如 `easy-ledger-1.3.1-v1.3.1.apk`）。
 
 ## 相关开源项目
 

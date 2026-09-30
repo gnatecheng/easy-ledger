@@ -10,7 +10,7 @@ A local-first personal finance Android app. Data lives in SQLite (Room) on your 
 - **Releases**: [Download APK](https://github.com/gnatecheng/easy-ledger/releases)
 - **App name**: **Easy Ledger** (Chinese UI: **轻记账**)
 - **Package**: `com.qingjizhang.app`
-- **Version**: 1.3.2
+- **Version**: 1.3.1
 - **Minimum OS**: Android 8.0 (API 26)
 - **Stack**: Kotlin, Jetpack Compose, Material 3, Room, Navigation Compose
 
@@ -34,10 +34,6 @@ A local-first personal finance Android app. Data lives in SQLite (Room) on your 
 - **Demo data**: sample transactions on first open; clear or restore from Mine → Reminder settings.
 
 ## Changelog
-
-### 1.3.2
-
-- Fix in-app English/Chinese switch (AppCompat locales and sync with system per-app language).
 
 ### 1.3.1
 
@@ -76,7 +72,7 @@ Output:
 
 The demo signing config is for sideloading only—not for store upload. Passwords are in `signingConfigs.release` in `app/build.gradle.kts`.
 
-When you push a `v*` tag, the [Release APK workflow](https://github.com/gnatecheng/easy-ledger/blob/main/.github/workflows/release-apk.yml) publishes a debug build asset named `easy-ledger-{versionName}-{tag}.apk` (e.g. `easy-ledger-1.3.2-v1.3.2.apk`).
+When you push a `v*` tag, the [Release APK workflow](https://github.com/gnatecheng/easy-ledger/blob/main/.github/workflows/release-apk.yml) publishes a debug build asset named `easy-ledger-{versionName}-{tag}.apk` (e.g. `easy-ledger-1.3.1-v1.3.1.apk`).
 
 ## Related open-source projects
 
