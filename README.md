@@ -10,7 +10,7 @@ A local-first personal finance Android app. Data lives in SQLite (Room) on your 
 - **Releases**: [Download APK](https://github.com/gnatecheng/easy-ledger/releases)
 - **App name**: **Easy Ledger** (Chinese UI: **轻记账**)
 - **Package**: `com.qingjizhang.app`
-- **Version**: 1.3.1
+- **Version**: 1.3.2
 - **Minimum OS**: Android 8.0 (API 26)
 - **Stack**: Kotlin, Jetpack Compose, Material 3, Room, Navigation Compose
 
@@ -34,6 +34,10 @@ A local-first personal finance Android app. Data lives in SQLite (Room) on your 
 - **Demo data**: sample transactions on first open; clear or restore from Mine → Reminder settings.
 
 ## Changelog
+
+### 1.3.2
+
+- Fix in-app English/Chinese switch (AppCompat locales, system per-app language sync, `autoStoreLocales` disabled).
 
 ### 1.3.1
 

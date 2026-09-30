@@ -16,14 +16,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 
-class AppContainer(app: Application) {
+class AppContainer(val application: Application) {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    val db = AppDatabase.create(app)
-    val settings = SettingsStore(app)
-    val receipts = ReceiptStore(app)
-    val repo = FinanceRepository(db, receipts) { MonthBalanceWidget.refresh(app) }
+    val db = AppDatabase.create(application)
+    val settings = SettingsStore(application)
+    val receipts = ReceiptStore(application)
+    val repo = FinanceRepository(db, receipts) { MonthBalanceWidget.refresh(application) }
     val seeder = Seeder(db, settings)
     val backup = BackupManager(repo, settings)
 }
@@ -34,9 +35,17 @@ class QingJiZhangApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        val language = SettingsStore.readLanguageBlocking(this)
-        LocaleHelper.applyAppLanguage(language)
+        LocaleHelper.syncFromBlocking(this)
         container = AppContainer(this)
+        runBlocking {
+            if (LocaleHelper.usesSystemLocaleAsSourceOfTruth()) {
+                LocaleHelper.syncSystemLocalesIntoAppStorage(this@QingJiZhangApp, container.settings)
+            } else {
+                val language = SettingsStore.readLanguageBlocking(this@QingJiZhangApp)
+                LocaleHelper.persistForBoot(this@QingJiZhangApp, language)
+                LocaleHelper.applyAppLanguage(language)
+            }
+        }
         container.scope.launch {
             container.seeder.seedIfNeeded()
             container.repo.generateDueRecurring(LocalDate.now())
@@ -45,6 +54,12 @@ class QingJiZhangApp : Application() {
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
                 container.scope.launch {
+                    if (LocaleHelper.usesSystemLocaleAsSourceOfTruth()) {
+                        LocaleHelper.syncSystemLocalesIntoAppStorage(
+                            this@QingJiZhangApp,
+                            container.settings,
+                        )
+                    }
                     container.repo.generateDueRecurring(LocalDate.now())
                     MonthBalanceWidget.refresh(this@QingJiZhangApp)
                 }

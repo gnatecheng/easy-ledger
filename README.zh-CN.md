@@ -10,7 +10,7 @@
 - **Releases**：[下载 APK](https://github.com/gnatecheng/easy-ledger/releases)
 - **应用名**：轻记账（英文界面：**Easy Ledger**）
 - **包名**：`com.qingjizhang.app`
-- **版本**：1.3.1
+- **版本**：1.3.2
 - **最低系统**：Android 8.0（API 26）
 - **技术**：Kotlin、Jetpack Compose、Material 3、Room、Navigation Compose
 
@@ -34,6 +34,10 @@
 - **演示数据**：第一次打开会写入示例流水，可在「我的 → 提醒设置」中清除或恢复。
 
 ## 更新记录
+
+### 1.3.2
+
+- 修复应用内切换 English/中文无效的问题（AppCompat 语言、系统「应用语言」同步；禁用 autoStoreLocales 避免首启覆盖系统语言）。
 
 ### 1.3.1
 
