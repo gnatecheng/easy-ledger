@@ -458,6 +458,12 @@ class SettingsVm(private val app: AppContainer) : ViewModel() {
         }
     }
 
+    fun acknowledgePrivacyNotice() {
+        viewModelScope.launch {
+            app.settings.update { it.copy(privacyNoticeAcknowledged = true) }
+        }
+    }
+
     fun clearDemo(onDone: () -> Unit) {
         viewModelScope.launch {
             app.repo.deleteAllTransactions()
@@ -481,7 +487,7 @@ class SettingsVm(private val app: AppContainer) : ViewModel() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppearanceSettingsScreen(onBack: () -> Unit) {
+fun AppearanceSettingsScreen(onBack: () -> Unit, onPrivacy: () -> Unit) {
     val app = LocalApp.current
     val vm: SettingsVm = viewModel(factory = SettingsVm.factory(app))
     val settings by vm.settings.collectAsState()
@@ -506,6 +512,10 @@ fun AppearanceSettingsScreen(onBack: () -> Unit) {
                         vm.setAppLanguage(lang)
                     }
                 }
+                Spacer(Modifier.height(16.dp))
+                OutlinedButton(onClick = onPrivacy, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.privacy_policy_title))
+                }
             }
             Text(
                 stringResource(R.string.dark_mode_hint),
@@ -518,7 +528,7 @@ fun AppearanceSettingsScreen(onBack: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, onPrivacy: () -> Unit) {
     val app = LocalApp.current
     val vm: SettingsVm = viewModel(factory = SettingsVm.factory(app))
     val settings by vm.settings.collectAsState()
@@ -544,6 +554,11 @@ fun SettingsScreen(onBack: () -> Unit) {
         snackbarHost = { SnackbarHost(snack) },
     ) { padding ->
         Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            AppCard {
+                OutlinedButton(onClick = onPrivacy, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.privacy_policy_title))
+                }
+            }
             AppCard {
                 Text(stringResource(R.string.large_txn_title), fontWeight = FontWeight.Medium)
                 Text(stringResource(R.string.large_txn_desc), color = InkMuted, style = MaterialTheme.typography.bodyMedium)

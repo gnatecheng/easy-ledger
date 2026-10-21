@@ -131,6 +131,13 @@
     <string name="about_open_github">Open in browser</string>
     <string name="about_build_time_unknown">—</string>
 
+    <string name="privacy_policy_title">Privacy policy</string>
+    <string name="privacy_notice_title">Privacy notice</string>
+    <string name="privacy_notice_body">This app does not collect personal information. Your data stays on this phone. Files leave the device only if you back up, export, or share them.</string>
+    <string name="privacy_notice_got_it">Got it</string>
+    <string name="privacy_notice_read_full">Read full policy</string>
+    <string name="privacy_open_web">Open full policy in browser</string>
+
     <string name="settings_title">Settings</string>
     <string name="large_txn_title">Large transaction alert</string>
     <string name="large_txn_desc">Shows a banner on Home when a single entry reaches this amount.</string>

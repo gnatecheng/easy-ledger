@@ -1,0 +1,12 @@
+Easy Ledger (轻记账) is a local-first personal budgeting app. No account, no server—your ledger stays on your phone.
+
+· Entries: amount, date/time, income/expense, category, account, notes, tags; quick add; month switch; search and filters
+· Transfers between accounts; balances stay in sync; transfers excluded from monthly totals
+· Budgets with warnings; statistics with pie chart and 12-month trend; share monthly report or export PDF
+· Recurring rules; CSV/JSON import and export; home-screen widget
+· Receipt photos stored on device only
+· Chinese and English UI; light, dark, or system theme
+
+Privacy: offline, no ads, no analytics, no INTERNET permission. Data leaves the device only when you export or share.
+
+Open source (MIT): github.com/gnatecheng/easy-ledger
