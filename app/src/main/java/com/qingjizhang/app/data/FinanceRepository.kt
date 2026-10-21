@@ -1,6 +1,7 @@
 package com.qingjizhang.app.data
 
 import com.qingjizhang.app.domain.Account
+import com.qingjizhang.app.domain.AppClock
 import com.qingjizhang.app.domain.AccountType
 import com.qingjizhang.app.domain.Budget
 import com.qingjizhang.app.domain.BudgetStatus
@@ -264,21 +265,21 @@ class FinanceRepository(
             )
             rule.id
         }
-        generateDueRecurring(LocalDate.now())
+        generateDueRecurring(AppClock.today())
         return id
     }
 
     suspend fun setRecurringPaused(id: Long, paused: Boolean) {
         val existing = recurring.getById(id) ?: return
         recurring.update(existing.copy(paused = paused, updatedAt = System.currentTimeMillis()))
-        if (!paused) generateDueRecurring(LocalDate.now())
+        if (!paused) generateDueRecurring(AppClock.today())
     }
 
     suspend fun deleteRecurring(id: Long) {
         recurring.getById(id)?.let { recurring.delete(it) }
     }
 
-    suspend fun generateDueRecurring(today: LocalDate = LocalDate.now()): Int = generateMutex.withLock {
+    suspend fun generateDueRecurring(today: LocalDate = AppClock.today()): Int = generateMutex.withLock {
         val cats = categories.getAll().associateBy { it.id }
         val accs = accounts.getAll().associateBy { it.id }
         var created = 0

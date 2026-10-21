@@ -1,13 +1,15 @@
 package com.qingjizhang.app
 
-import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onRoot
-import androidx.core.os.LocaleListCompat
 import com.github.takahirom.roborazzi.captureRoboImage
-import com.qingjizhang.app.data.Seeder
+import com.qingjizhang.app.domain.AppClock
+import com.qingjizhang.app.screenshots.ScreenshotLocale
 import com.qingjizhang.app.ui.LocalApp
 import com.qingjizhang.app.ui.budget.BudgetScreen
 import com.qingjizhang.app.ui.home.HomeScreen
@@ -16,7 +18,6 @@ import com.qingjizhang.app.ui.mine.SettingsScreen
 import com.qingjizhang.app.ui.privacy.FirstLaunchPrivacyDialog
 import com.qingjizhang.app.ui.privacy.PrivacyPolicyScreen
 import com.qingjizhang.app.ui.stats.StatsScreen
-import com.qingjizhang.app.ui.theme.QingJiZhangTheme
 import com.qingjizhang.app.ui.txn.TransactionListScreen
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -32,7 +33,7 @@ import java.time.LocalDate
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [35], application = QingJiZhangApp::class, qualifiers = "w411dp-h822dp-port-xxhdpi")
+@Config(sdk = [35], application = QingJiZhangApp::class)
 @LooperMode(LooperMode.Mode.PAUSED)
 class StoreScreenshotsTest {
 
@@ -44,7 +45,7 @@ class StoreScreenshotsTest {
 
     @Before
     fun seedFixedDemo() {
-        Seeder.demoTodayOverride = LocalDate.of(2026, 9, 28)
+        AppClock.todayOverride = LocalDate.of(2026, 9, 28)
         runBlocking {
             appContainer().seeder.resetDemoData()
         }
@@ -63,61 +64,67 @@ class StoreScreenshotsTest {
         composeRule.onRoot().captureRoboImage(out.absolutePath)
     }
 
-    private fun withLocaleAndTheme(
+    private fun runShot(
         localeTag: String,
         darkTheme: Boolean,
+        relativePath: String,
         content: @Composable () -> Unit,
     ) {
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(localeTag))
+        ScreenshotLocale.applyRobolectricEnvironment(localeTag, darkTheme)
         composeRule.setContent {
-            QingJiZhangTheme(darkTheme = darkTheme) {
-                content()
-            }
+            ScreenshotLocale.Host(
+                baseContext = composeRule.activity,
+                localeTag = localeTag,
+                darkTheme = darkTheme,
+                content = content,
+            )
         }
+        captureTo(relativePath)
     }
 
     @Test
-    fun fastlane_en_home() = fastlaneTab("en-US", { HomeScreenContent() }, "1_home.png")
+    fun fastlane_en_home() = fastlaneTab("en-US", false, { HomeScreenContent() }, "1_home.png")
 
     @Test
-    fun fastlane_en_txns() = fastlaneTab("en-US", { TxnsScreenContent() }, "2_txns.png")
+    fun fastlane_en_txns() = fastlaneTab("en-US", false, { TxnsScreenContent() }, "2_txns.png")
 
     @Test
-    fun fastlane_en_stats() = fastlaneTab("en-US", { StatsScreen() }, "3_stats.png")
+    fun fastlane_en_stats() = fastlaneTab("en-US", false, { StatsScreen() }, "3_stats.png")
 
     @Test
-    fun fastlane_en_budgets() = fastlaneTab("en-US", { BudgetScreen() }, "4_budgets.png")
+    fun fastlane_en_budgets() = fastlaneTab("en-US", false, { BudgetScreen() }, "4_budgets.png")
 
     @Test
-    fun fastlane_en_mine() = fastlaneTab("en-US", { MineScreenContent() }, "5_mine.png")
+    fun fastlane_en_mine() = fastlaneTab("en-US", false, { MineScreenContent() }, "5_mine.png")
 
     @Test
-    fun fastlane_zh_home() = fastlaneTab("zh-CN", { HomeScreenContent() }, "1_home.png")
+    fun fastlane_zh_home() = fastlaneTab("zh-CN", false, { HomeScreenContent() }, "1_home.png")
 
     @Test
-    fun fastlane_zh_txns() = fastlaneTab("zh-CN", { TxnsScreenContent() }, "2_txns.png")
+    fun fastlane_zh_txns() = fastlaneTab("zh-CN", false, { TxnsScreenContent() }, "2_txns.png")
 
     @Test
-    fun fastlane_zh_stats() = fastlaneTab("zh-CN", { StatsScreen() }, "3_stats.png")
+    fun fastlane_zh_stats() = fastlaneTab("zh-CN", false, { StatsScreen() }, "3_stats.png")
 
     @Test
-    fun fastlane_zh_budgets() = fastlaneTab("zh-CN", { BudgetScreen() }, "4_budgets.png")
+    fun fastlane_zh_budgets() = fastlaneTab("zh-CN", false, { BudgetScreen() }, "4_budgets.png")
 
     @Test
-    fun fastlane_zh_mine() = fastlaneTab("zh-CN", { MineScreenContent() }, "5_mine.png")
+    fun fastlane_zh_mine() = fastlaneTab("zh-CN", false, { MineScreenContent() }, "5_mine.png")
 
     private fun fastlaneTab(
         localeFolder: String,
+        darkTheme: Boolean,
         screen: @Composable () -> Unit,
         fileName: String,
     ) {
         val app = appContainer()
-        withLocaleAndTheme(localeFolder, darkTheme = false) {
+        val localeTag = if (localeFolder.startsWith("zh")) "zh-CN" else "en-US"
+        runShot(localeTag, darkTheme, "fastlane/metadata/android/$localeFolder/images/phoneScreenshots/$fileName") {
             CompositionLocalProvider(LocalApp provides app) {
                 screen()
             }
         }
-        captureTo("fastlane/metadata/android/$localeFolder/images/phoneScreenshots/$fileName")
     }
 
     @Composable
@@ -152,43 +159,50 @@ class StoreScreenshotsTest {
     @Test
     fun playReadiness_settingsPrivacy_zhLight() {
         val app = appContainer()
-        withLocaleAndTheme("zh-CN", darkTheme = false) {
+        runShot("zh-CN", darkTheme = false, "docs/screenshots/play-readiness/settings_privacy_zh_light.png") {
             CompositionLocalProvider(LocalApp provides app) {
                 SettingsScreen(onBack = {}, onPrivacy = {})
             }
         }
-        captureTo("docs/screenshots/play-readiness/settings_privacy_zh_light.png")
     }
 
     @Test
     fun playReadiness_privacyNotice_zhLight() {
-        withLocaleAndTheme("zh-CN", darkTheme = false) {
-            FirstLaunchPrivacyDialog(onAcknowledge = {}, onReadFull = {})
+        val app = appContainer()
+        runShot("zh-CN", darkTheme = false, "docs/screenshots/play-readiness/privacy_notice_zh_light.png") {
+            CompositionLocalProvider(LocalApp provides app) {
+                Box(Modifier.fillMaxSize()) {
+                    HomeScreenContent()
+                    FirstLaunchPrivacyDialog(onAcknowledge = {}, onReadFull = {})
+                }
+            }
         }
-        captureTo("docs/screenshots/play-readiness/privacy_notice_zh_light.png")
     }
 
     @Test
     fun playReadiness_privacyNotice_enDark() {
-        withLocaleAndTheme("en", darkTheme = true) {
-            FirstLaunchPrivacyDialog(onAcknowledge = {}, onReadFull = {})
+        val app = appContainer()
+        runShot("en", darkTheme = true, "docs/screenshots/play-readiness/privacy_notice_en_dark.png") {
+            CompositionLocalProvider(LocalApp provides app) {
+                Box(Modifier.fillMaxSize()) {
+                    HomeScreenContent()
+                    FirstLaunchPrivacyDialog(onAcknowledge = {}, onReadFull = {})
+                }
+            }
         }
-        captureTo("docs/screenshots/play-readiness/privacy_notice_en_dark.png")
     }
 
     @Test
     fun playReadiness_privacyPolicy_en() {
-        withLocaleAndTheme("en", darkTheme = false) {
+        runShot("en", darkTheme = false, "docs/screenshots/play-readiness/privacy_policy_en.png") {
             PrivacyPolicyScreen(onBack = {})
         }
-        captureTo("docs/screenshots/play-readiness/privacy_policy_en.png")
     }
 
     @Test
     fun playReadiness_privacyPolicy_zh() {
-        withLocaleAndTheme("zh-CN", darkTheme = false) {
+        runShot("zh-CN", darkTheme = false, "docs/screenshots/play-readiness/privacy_policy_zh.png") {
             PrivacyPolicyScreen(onBack = {})
         }
-        captureTo("docs/screenshots/play-readiness/privacy_policy_zh.png")
     }
 }

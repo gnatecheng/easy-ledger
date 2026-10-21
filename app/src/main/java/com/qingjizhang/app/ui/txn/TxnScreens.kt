@@ -73,6 +73,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.qingjizhang.app.AppContainer
 import com.qingjizhang.app.data.FinanceRepository
 import com.qingjizhang.app.domain.Account
+import com.qingjizhang.app.domain.AppClock
 import com.qingjizhang.app.domain.Category
 import com.qingjizhang.app.domain.Dates
 import com.qingjizhang.app.domain.Money
@@ -106,7 +107,7 @@ import java.time.YearMonth
 import java.time.ZoneId
 
 data class TxnListUi(
-    val month: YearMonth = YearMonth.now(),
+    val month: YearMonth = AppClock.yearMonth(),
     val query: String = "",
     val kind: TxnKind? = null,
     val accountId: Long? = null,
@@ -127,7 +128,7 @@ data class TxnListUi(
 }
 
 class TxnListViewModel(app: AppContainer) : ViewModel() {
-    val month = MutableStateFlow(YearMonth.now())
+    val month = MutableStateFlow(AppClock.yearMonth())
     val query = MutableStateFlow("")
     val kind = MutableStateFlow<TxnKind?>(null)
     val accountId = MutableStateFlow<Long?>(null)

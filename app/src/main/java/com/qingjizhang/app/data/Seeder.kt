@@ -1,6 +1,7 @@
 package com.qingjizhang.app.data
 
 import com.qingjizhang.app.domain.AccountType
+import com.qingjizhang.app.domain.AppClock
 import com.qingjizhang.app.domain.Dates
 import com.qingjizhang.app.domain.TxnKind
 import kotlinx.coroutines.flow.first
@@ -49,13 +50,6 @@ class Seeder(
     private val db: AppDatabase,
     private val settings: SettingsStore,
 ) {
-    companion object {
-        /** Fixed “today” for screenshot tests (2026-09-28). */
-        @Volatile
-        var demoTodayOverride: LocalDate? = null
-    }
-
-    private fun demoToday(): LocalDate = demoTodayOverride ?: LocalDate.now()
     suspend fun seedIfNeeded() {
         val current = settings.settings.first()
         if (current.demoSeeded) return
@@ -78,7 +72,7 @@ class Seeder(
     }
 
     private suspend fun seedFresh() {
-        val now = System.currentTimeMillis()
+        val now = AppClock.nowMillis()
         val expenseCats = listOf(
             "餐饮" to "🍜",
             "交通" to "🚇",
@@ -153,7 +147,7 @@ class Seeder(
         )
 
         val rng = Random(20260911)
-        val today = demoToday()
+        val today = AppClock.today()
         val txns = mutableListOf<TransactionEntity>()
 
         fun add(

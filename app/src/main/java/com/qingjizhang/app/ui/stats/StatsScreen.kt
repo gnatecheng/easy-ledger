@@ -34,6 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.qingjizhang.app.AppContainer
 import com.qingjizhang.app.data.FinanceRepository
 import com.qingjizhang.app.domain.Account
+import com.qingjizhang.app.domain.AppClock
 import com.qingjizhang.app.domain.CategorySlice
 import com.qingjizhang.app.domain.Dates
 import com.qingjizhang.app.domain.MonthSummary
@@ -65,8 +66,8 @@ enum class RangePreset { THIS_MONTH, LAST_3, LAST_12, CUSTOM }
 
 data class StatsUi(
     val preset: RangePreset = RangePreset.THIS_MONTH,
-    val start: LocalDate = YearMonth.now().atDay(1),
-    val end: LocalDate = LocalDate.now(),
+    val start: LocalDate = AppClock.yearMonth().atDay(1),
+    val end: LocalDate = AppClock.today(),
     val kind: TxnKind = TxnKind.EXPENSE,
     val accountId: Long? = null,
     val tag: String? = null,
@@ -84,8 +85,8 @@ data class StatsUi(
 
 class StatsViewModel(app: AppContainer) : ViewModel() {
     val preset = MutableStateFlow(RangePreset.THIS_MONTH)
-    val customStart = MutableStateFlow(YearMonth.now().atDay(1))
-    val customEnd = MutableStateFlow(LocalDate.now())
+    val customStart = MutableStateFlow(AppClock.yearMonth().atDay(1))
+    val customEnd = MutableStateFlow(AppClock.today())
     val kind = MutableStateFlow(TxnKind.EXPENSE)
     val accountId = MutableStateFlow<Long?>(null)
     val tag = MutableStateFlow<String?>(null)
@@ -104,7 +105,7 @@ class StatsViewModel(app: AppContainer) : ViewModel() {
         val prevEnd = start.minusDays(1)
         val filtered = FinanceRepository.filterTxns(txns, "", null, f.accountId, null, tagValue, start, end)
         val prev = FinanceRepository.filterTxns(txns, "", null, f.accountId, null, tagValue, prevStart, prevEnd)
-        val months = (0..11).map { YearMonth.now().minusMonths((11 - it).toLong()) }.map { ym ->
+        val months = (0..11).map { AppClock.yearMonth().minusMonths((11 - it).toLong()) }.map { ym ->
             val inMonth = FinanceRepository.filterTxns(
                 txns, "", null, f.accountId, null, tagValue, ym.atDay(1), ym.atEndOfMonth(),
             )
@@ -147,9 +148,9 @@ class StatsViewModel(app: AppContainer) : ViewModel() {
         fun factory(app: AppContainer) = vmFactory { StatsViewModel(app) }
 
         fun rangeOf(preset: RangePreset, start: LocalDate, end: LocalDate): Pair<LocalDate, LocalDate> {
-            val today = LocalDate.now()
+            val today = AppClock.today()
             return when (preset) {
-                RangePreset.THIS_MONTH -> YearMonth.now().atDay(1) to today
+                RangePreset.THIS_MONTH -> AppClock.yearMonth().atDay(1) to today
                 RangePreset.LAST_3 -> today.minusMonths(3).plusDays(1) to today
                 RangePreset.LAST_12 -> today.minusMonths(12).plusDays(1) to today
                 RangePreset.CUSTOM -> start to end
@@ -189,14 +190,14 @@ fun StatsScreen() {
             TextButton(onClick = {
                 MonthShare.shareImage(
                     context,
-                    MonthSummary(YearMonth.now(), ui.income, ui.expense, ui.transfer),
+                    MonthSummary(AppClock.yearMonth(), ui.income, ui.expense, ui.transfer),
                     ui.slices,
                 )
             }) { Text(stringResource(R.string.share_month_report)) }
             TextButton(onClick = {
                 MonthShare.sharePdf(
                     context,
-                    MonthSummary(YearMonth.now(), ui.income, ui.expense, ui.transfer),
+                    MonthSummary(AppClock.yearMonth(), ui.income, ui.expense, ui.transfer),
                     ui.slices,
                 )
             }) { Text(stringResource(R.string.export_pdf)) }
