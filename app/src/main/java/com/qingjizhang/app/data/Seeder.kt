@@ -49,6 +49,13 @@ class Seeder(
     private val db: AppDatabase,
     private val settings: SettingsStore,
 ) {
+    companion object {
+        /** Fixed “today” for screenshot tests (2026-09-28). */
+        @Volatile
+        var demoTodayOverride: LocalDate? = null
+    }
+
+    private fun demoToday(): LocalDate = demoTodayOverride ?: LocalDate.now()
     suspend fun seedIfNeeded() {
         val current = settings.settings.first()
         if (current.demoSeeded) return
@@ -146,7 +153,7 @@ class Seeder(
         )
 
         val rng = Random(20260911)
-        val today = LocalDate.now()
+        val today = demoToday()
         val txns = mutableListOf<TransactionEntity>()
 
         fun add(
