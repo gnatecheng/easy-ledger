@@ -1,0 +1,1 @@
+Play/Coolapk readiness: target API 36, in-app privacy policy and first-launch notice, reproducible builds, signed AAB CI artifact, Fastlane store metadata.

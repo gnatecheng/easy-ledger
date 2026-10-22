@@ -38,6 +38,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.qingjizhang.app.AppContainer
 import com.qingjizhang.app.R
 import com.qingjizhang.app.data.FinanceRepository
+import com.qingjizhang.app.domain.AppClock
 import com.qingjizhang.app.domain.Budget
 import com.qingjizhang.app.domain.BudgetStatus
 import com.qingjizhang.app.domain.Category
@@ -60,13 +61,13 @@ import kotlinx.coroutines.launch
 import java.time.YearMonth
 
 data class BudgetUi(
-    val month: YearMonth = YearMonth.now(),
+    val month: YearMonth = AppClock.yearMonth(),
     val statuses: List<BudgetStatus> = emptyList(),
     val expenseCats: List<Category> = emptyList(),
 )
 
 class BudgetViewModel(private val app: AppContainer) : ViewModel() {
-    val month = MutableStateFlow(YearMonth.now())
+    val month = MutableStateFlow(AppClock.yearMonth())
 
     val ui = combine(
         month,

@@ -10,6 +10,7 @@ import com.qingjizhang.app.data.FinanceRepository
 import com.qingjizhang.app.data.ReceiptStore
 import com.qingjizhang.app.data.Seeder
 import com.qingjizhang.app.data.SettingsStore
+import com.qingjizhang.app.domain.AppClock
 import com.qingjizhang.app.ui.i18n.LocaleHelper
 import com.qingjizhang.app.widget.MonthBalanceWidget
 import kotlinx.coroutines.CoroutineScope
@@ -48,7 +49,7 @@ class QingJiZhangApp : Application() {
         }
         container.scope.launch {
             container.seeder.seedIfNeeded()
-            container.repo.generateDueRecurring(LocalDate.now())
+            container.repo.generateDueRecurring(AppClock.today())
             MonthBalanceWidget.refresh(this@QingJiZhangApp)
         }
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
@@ -60,7 +61,7 @@ class QingJiZhangApp : Application() {
                             container.settings,
                         )
                     }
-                    container.repo.generateDueRecurring(LocalDate.now())
+                    container.repo.generateDueRecurring(AppClock.today())
                     MonthBalanceWidget.refresh(this@QingJiZhangApp)
                 }
             }

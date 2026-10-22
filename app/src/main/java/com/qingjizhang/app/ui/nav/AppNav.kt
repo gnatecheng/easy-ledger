@@ -14,10 +14,14 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -40,6 +44,10 @@ import com.qingjizhang.app.ui.mine.ImportExportScreen
 import com.qingjizhang.app.ui.mine.MineScreen
 import com.qingjizhang.app.ui.mine.AppearanceSettingsScreen
 import com.qingjizhang.app.ui.mine.SettingsScreen
+import com.qingjizhang.app.ui.privacy.FirstLaunchPrivacyDialog
+import com.qingjizhang.app.ui.privacy.PrivacyPolicyScreen
+import com.qingjizhang.app.ui.LocalApp
+import com.qingjizhang.app.ui.mine.SettingsVm
 import com.qingjizhang.app.ui.recurring.RecurringEditScreen
 import com.qingjizhang.app.ui.recurring.RecurringListScreen
 import com.qingjizhang.app.ui.stats.StatsScreen
@@ -58,11 +66,31 @@ private enum class Tab(val route: String, val labelRes: Int, val icon: ImageVect
 @Composable
 fun QingJiZhangRoot() {
     val nav = rememberNavController()
+    val app = LocalApp.current
+    val settingsVm: SettingsVm = viewModel(factory = SettingsVm.factory(app))
+    val settings by settingsVm.settings.collectAsState()
+    var pendingPrivacyFull by remember { mutableStateOf(false) }
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route.orEmpty()
     val showBottom = Tab.entries.any { it.route == route }
     var quickAdd by rememberSaveable { mutableStateOf(false) }
     var quickKind by rememberSaveable { mutableStateOf("EXPENSE") }
+
+    if (!settings.privacyNoticeAcknowledged) {
+        FirstLaunchPrivacyDialog(
+            onAcknowledge = { settingsVm.acknowledgePrivacyNotice() },
+            onReadFull = {
+                settingsVm.acknowledgePrivacyNotice()
+                pendingPrivacyFull = true
+            },
+        )
+    }
+    LaunchedEffect(pendingPrivacyFull) {
+        if (pendingPrivacyFull) {
+            pendingPrivacyFull = false
+            nav.navigate("privacy")
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -178,9 +206,20 @@ fun QingJiZhangRoot() {
                 )
             }
             composable("import") { ImportExportScreen(onBack = { nav.popBackStack() }) }
-            composable("appearance") { AppearanceSettingsScreen(onBack = { nav.popBackStack() }) }
-            composable("settings") { SettingsScreen(onBack = { nav.popBackStack() }) }
+            composable("appearance") {
+                AppearanceSettingsScreen(
+                    onBack = { nav.popBackStack() },
+                    onPrivacy = { nav.navigate("privacy") },
+                )
+            }
+            composable("settings") {
+                SettingsScreen(
+                    onBack = { nav.popBackStack() },
+                    onPrivacy = { nav.navigate("privacy") },
+                )
+            }
             composable("about") { AboutScreen(onBack = { nav.popBackStack() }) }
+            composable("privacy") { PrivacyPolicyScreen(onBack = { nav.popBackStack() }) }
         }
     }
     if (quickAdd) {

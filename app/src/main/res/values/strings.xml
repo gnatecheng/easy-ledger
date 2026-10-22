@@ -142,6 +142,13 @@
     <string name="about_open_github">在浏览器中打开</string>
     <string name="about_build_time_unknown">—</string>
 
+    <string name="privacy_policy_title">隐私政策</string>
+    <string name="privacy_notice_title">隐私说明</string>
+    <string name="privacy_notice_body">本应用不收集个人信息，数据只保存在你的手机。只有你主动备份、导出或分享时，相关文件才会离开本机。</string>
+    <string name="privacy_notice_got_it">我知道了</string>
+    <string name="privacy_notice_read_full">查看全文</string>
+    <string name="privacy_open_web">在浏览器中打开完整政策</string>
+
     <!-- Settings -->
     <string name="settings_title">设置</string>
     <string name="large_txn_title">大额交易提醒</string>

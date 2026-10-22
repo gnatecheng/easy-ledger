@@ -1,6 +1,7 @@
 package com.qingjizhang.app.data
 
 import com.qingjizhang.app.domain.AccountType
+import com.qingjizhang.app.domain.AppClock
 import com.qingjizhang.app.domain.Dates
 import com.qingjizhang.app.domain.TxnKind
 import kotlinx.coroutines.flow.first
@@ -71,7 +72,7 @@ class Seeder(
     }
 
     private suspend fun seedFresh() {
-        val now = System.currentTimeMillis()
+        val now = AppClock.nowMillis()
         val expenseCats = listOf(
             "餐饮" to "🍜",
             "交通" to "🚇",
@@ -146,7 +147,7 @@ class Seeder(
         )
 
         val rng = Random(20260911)
-        val today = LocalDate.now()
+        val today = AppClock.today()
         val txns = mutableListOf<TransactionEntity>()
 
         fun add(

@@ -1,0 +1,48 @@
+Easy Ledger (轻记账) Privacy Policy
+
+Effective date: 2026-10-13
+Publisher: Ch Etang (Etai Apps)
+
+In one sentence
+This app works offline with no account and no server we operate. By default we do not collect or upload personal information. Data stays on your device; files leave the phone only when you back up, export, or share them yourself.
+
+On-device app data
+· Ledger entries, categories, accounts, budgets, and reminder settings
+· Notes and tags
+· Receipt photos you attach to entries (if you capture or pick from the gallery)
+· Language, theme, and other preferences saved on your phone
+
+Content you export or share
+When you use backup, CSV/JSON export, or share a monthly report, the app creates files that appear only where you save or send them. We do not upload them for you.
+
+What we do not collect
+· No sign-up or sign-in
+· No ad, analytics, or crash-reporting SDKs (as reflected in this release’s manifest and dependencies)
+· No INTERNET permission; normal use does not require a network, and we have no backend that receives your ledger data
+
+Permissions (see the system install prompt and merged manifest for this build)
+· Camera (only when you tap to take a receipt photo): used for photos you choose to capture; stored in the app’s private storage
+· Photos / media access (only when you pick from the gallery): for images you explicitly select; we do not scan your gallery in the background
+· Optional hardware: camera (not required to use the rest of the app)
+· Android libraries may merge signature-level permissions such as DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION for in-app component communication only
+
+Children
+We do not direct the app at children or collect children’s data for our services. A parent or guardian can uninstall the app or manage data on the device.
+
+Security and device changes
+· On-device security depends mainly on your lock screen and system settings
+· Uninstalling usually deletes app data; back up before reinstalling or switching phones
+· Release-signed builds may not overwrite older debug builds (com.qingjizhang.app.debug); export JSON before migrating
+
+Third parties
+Download stores (GitHub Releases, Coolapk, Google Play, etc.) have their own policies, separate from in-app data handling.
+
+Open-source libraries are used under their licenses; we do not use them to add tracking.
+
+Changes
+If this policy changes materially, we will update the effective date and note it on the website or in release notes where practical.
+
+Contact
+https://etais.dev/ or Issues / Discussions on GitHub: gnatecheng/easy-ledger.
+
+Full web version: https://etais.dev/en/privacy/

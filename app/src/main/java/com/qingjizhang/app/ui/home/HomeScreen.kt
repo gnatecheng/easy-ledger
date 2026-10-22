@@ -39,6 +39,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.qingjizhang.app.AppContainer
 import com.qingjizhang.app.data.AppSettings
+import com.qingjizhang.app.domain.AppClock
 import com.qingjizhang.app.domain.Account
 import com.qingjizhang.app.domain.Budget
 import com.qingjizhang.app.domain.BudgetStatus
@@ -82,9 +83,9 @@ import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
 data class HomeUi(
-    val month: YearMonth = YearMonth.now(),
-    val summary: MonthSummary = MonthSummary(YearMonth.now(), 0, 0),
-    val prev: MonthSummary = MonthSummary(YearMonth.now().minusMonths(1), 0, 0),
+    val month: YearMonth = AppClock.yearMonth(),
+    val summary: MonthSummary = MonthSummary(AppClock.yearMonth(), 0, 0),
+    val prev: MonthSummary = MonthSummary(AppClock.yearMonth().minusMonths(1), 0, 0),
     val recent: List<Txn> = emptyList(),
     val largeTxns: List<Txn> = emptyList(),
     val accounts: List<Account> = emptyList(),
@@ -95,7 +96,7 @@ data class HomeUi(
 )
 
 class HomeViewModel(private val app: AppContainer) : ViewModel() {
-    val month = MutableStateFlow(YearMonth.now())
+    val month = MutableStateFlow(AppClock.yearMonth())
     private val dismissed = MutableStateFlow(setOf<String>())
 
     val ui = combine(
@@ -143,7 +144,7 @@ class HomeViewModel(private val app: AppContainer) : ViewModel() {
 
     fun dismissNudge() {
         viewModelScope.launch {
-            app.settings.update { it.copy(nudgeDismissedAt = System.currentTimeMillis()) }
+            app.settings.update { it.copy(nudgeDismissedAt = AppClock.nowMillis()) }
         }
     }
 
@@ -373,12 +374,12 @@ object FinanceAlerts {
         val days = ui.settings.inactivityNudgeDays
         if (last != null && days > 0 && "nudge" !in dismissed) {
             val lastDate = Instant.ofEpochMilli(last).atZone(ZoneId.systemDefault()).toLocalDate()
-            val gap = ChronoUnit.DAYS.between(lastDate, LocalDate.now())
+            val gap = ChronoUnit.DAYS.between(lastDate, AppClock.today())
             val dismissedAt = ui.settings.nudgeDismissedAt
             val recentlyDismissed = dismissedAt > 0 &&
                 ChronoUnit.DAYS.between(
                     Instant.ofEpochMilli(dismissedAt).atZone(ZoneId.systemDefault()).toLocalDate(),
-                    LocalDate.now(),
+                    AppClock.today(),
                 ) < 1
             if (gap >= days && !recentlyDismissed) {
                 val (container, content) = financeAlertNudgeColors()

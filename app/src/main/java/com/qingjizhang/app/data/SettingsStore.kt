@@ -22,6 +22,7 @@ data class AppSettings(
     val nudgeDismissedAt: Long = 0L,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val appLanguage: AppLanguage = AppLanguage.SYSTEM,
+    val privacyNoticeAcknowledged: Boolean = false,
 )
 
 class SettingsStore(context: Context) {
@@ -38,6 +39,7 @@ class SettingsStore(context: Context) {
             prefs[Keys.NUDGE] = next.nudgeDismissedAt
             prefs[Keys.THEME_MODE] = next.themeMode.storageKey
             prefs[Keys.APP_LANGUAGE] = next.appLanguage.storageKey
+            prefs[Keys.PRIVACY_NOTICE] = next.privacyNoticeAcknowledged
         }
     }
 
@@ -51,6 +53,7 @@ class SettingsStore(context: Context) {
         val DARK = booleanPreferencesKey("dark_theme")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val APP_LANGUAGE = stringPreferencesKey("app_language")
+        val PRIVACY_NOTICE = booleanPreferencesKey("privacy_notice_acknowledged")
     }
 
     private fun Preferences.toSettings(): AppSettings {
@@ -65,6 +68,7 @@ class SettingsStore(context: Context) {
             nudgeDismissedAt = this[Keys.NUDGE] ?: 0L,
             themeMode = themeMode,
             appLanguage = language,
+            privacyNoticeAcknowledged = this[Keys.PRIVACY_NOTICE] ?: false,
         )
     }
 

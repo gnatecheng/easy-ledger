@@ -1,6 +1,6 @@
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 plugins {
     id("com.android.application")
@@ -8,21 +8,32 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.devtools.ksp")
+    id("io.github.takahirom.roborazzi")
+}
+
+fun Project.reproducibleBuildTimeIso(): String {
+    val epochSec = providers.environmentVariable("SOURCE_DATE_EPOCH").orNull?.toLongOrNull()
+        ?: providers.exec {
+            commandLine("git", "log", "-1", "--format=%ct")
+            isIgnoreExitValue = true
+        }.standardOutput.asText.get().trim().takeIf { it.isNotEmpty() }?.toLongOrNull()
+        ?: 0L
+    if (epochSec == 0L) return ""
+    return Instant.ofEpochSecond(epochSec).atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
 }
 
 android {
     namespace = "com.qingjizhang.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.qingjizhang.app"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 6
-        versionName = "1.3.2"
+        targetSdk = 36
+        versionCode = 7
+        versionName = "1.3.3"
         vectorDrawables.useSupportLibrary = true
-        val buildTimeIso = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US).format(Date())
-        buildConfigField("String", "BUILD_TIME_ISO", "\"$buildTimeIso\"")
+        buildConfigField("String", "BUILD_TIME_ISO", "\"${reproducibleBuildTimeIso()}\"")
     }
 
     signingConfigs {
@@ -74,6 +85,10 @@ android {
         compose = true
         buildConfig = true
     }
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -84,6 +99,10 @@ android {
             isIncludeAndroidResources = true
         }
     }
+}
+
+tasks.withType<Test> {
+    maxParallelForks = 1
 }
 
 dependencies {
@@ -113,9 +132,11 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
-
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.14.1")
     testImplementation("androidx.test:core:1.6.1")
     testImplementation("androidx.test.ext:junit:1.2.1")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.40.1")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.40.1")
 }
