@@ -43,6 +43,8 @@
 如有实质变更，我们会更新生效日期，并在官网或更新说明中提示。
 
 联系方式
-https://etais.dev/ 或 GitHub 仓库 gnatecheng/easy-ledger 的 Issues / Discussions。
+· 邮箱：hi@etais.dev
+· 反馈：GitHub 仓库 gnatecheng/easy-ledger 的 Issues / Discussions
+· 网站：https://etais.dev/
 
 完整网页版：https://etais.dev/privacy/

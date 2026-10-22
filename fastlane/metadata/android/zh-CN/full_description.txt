@@ -9,3 +9,4 @@
 隐私：离线运行，无广告、无统计，无 INTERNET 权限。只有你主动导出或分享时，文件才会离开手机。
 
 开源（MIT）：github.com/gnatecheng/easy-ledger
+联系：hi@etais.dev
