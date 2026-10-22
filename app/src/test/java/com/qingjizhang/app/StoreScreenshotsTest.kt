@@ -6,7 +6,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performScrollTo
+import com.qingjizhang.app.domain.SupportContacts
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.qingjizhang.app.domain.AppClock
 import com.qingjizhang.app.screenshots.ScreenshotLocale
@@ -204,5 +207,22 @@ class StoreScreenshotsTest {
         runShot("zh-CN", darkTheme = false, "docs/screenshots/play-readiness/privacy_policy_zh.png") {
             PrivacyPolicyScreen(onBack = {})
         }
+    }
+
+    @Test
+    fun playReadiness_privacyPolicy_zh_hiEmail() {
+        ScreenshotLocale.applyRobolectricEnvironment("zh-CN", darkTheme = false)
+        composeRule.setContent {
+            ScreenshotLocale.Host(
+                baseContext = composeRule.activity,
+                localeTag = "zh-CN",
+                darkTheme = false,
+            ) {
+                PrivacyPolicyScreen(onBack = {})
+            }
+        }
+        composeRule.onNode(hasText(SupportContacts.EMAIL, substring = true)).performScrollTo()
+        composeRule.waitForIdle()
+        captureTo("docs/screenshots/play-readiness/privacy_policy_zh_hi_email.png")
     }
 }

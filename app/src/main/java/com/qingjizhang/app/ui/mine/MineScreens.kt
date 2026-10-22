@@ -95,6 +95,7 @@ import com.qingjizhang.app.domain.Account
 import com.qingjizhang.app.domain.AccountType
 import com.qingjizhang.app.domain.Category
 import com.qingjizhang.app.domain.Money
+import com.qingjizhang.app.domain.SupportContacts
 import com.qingjizhang.app.domain.TxnKind
 import com.qingjizhang.app.ui.LocalApp
 import com.qingjizhang.app.ui.components.AppCard
@@ -557,6 +558,25 @@ fun SettingsScreen(onBack: () -> Unit, onPrivacy: () -> Unit) {
             AppCard {
                 OutlinedButton(onClick = onPrivacy, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.privacy_policy_title))
+                }
+            }
+            AppCard {
+                Text(stringResource(R.string.about_contact), fontWeight = FontWeight.Medium)
+                Text(
+                    stringResource(R.string.support_email),
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = {
+                        context.startActivity(
+                            Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:${SupportContacts.EMAIL}")),
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.about_open_email))
                 }
             }
             AppCard {

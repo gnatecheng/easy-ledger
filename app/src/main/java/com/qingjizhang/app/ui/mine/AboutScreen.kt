@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.qingjizhang.app.BuildConfig
 import com.qingjizhang.app.R
+import com.qingjizhang.app.domain.SupportContacts
 import com.qingjizhang.app.ui.components.AppCard
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,9 +74,35 @@ fun AboutScreen(onBack: () -> Unit) {
                 Text(formatBuildTime(BuildConfig.BUILD_TIME_ISO), fontWeight = FontWeight.Medium)
             }
             AppCard {
+                Text(stringResource(R.string.about_contact), fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    stringResource(R.string.support_email),
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = {
+                        context.startActivity(
+                            Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:${SupportContacts.EMAIL}")),
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.about_open_email))
+                }
+            }
+            AppCard {
                 Text(stringResource(R.string.about_github), fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(4.dp))
                 Text(githubUrl, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    stringResource(R.string.about_github_feedback),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
                 Spacer(Modifier.height(12.dp))
                 OutlinedButton(
                     onClick = {
@@ -84,6 +111,14 @@ fun AboutScreen(onBack: () -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(stringResource(R.string.about_open_github))
+                }
+                OutlinedButton(
+                    onClick = {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SupportContacts.GITHUB_ISSUES_URL)))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.about_open_github_issues))
                 }
             }
         }

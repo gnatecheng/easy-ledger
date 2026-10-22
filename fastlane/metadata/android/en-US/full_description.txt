@@ -10,3 +10,4 @@ Easy Ledger (轻记账) is a local-first personal budgeting app. No account, no 
 Privacy: offline, no ads, no analytics, no INTERNET permission. Data leaves the device only when you export or share.
 
 Open source (MIT): github.com/gnatecheng/easy-ledger
+Contact: hi@etais.dev
