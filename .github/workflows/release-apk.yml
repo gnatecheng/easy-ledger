@@ -136,6 +136,38 @@ jobs:
           files: ${{ env.APK_NAME }}
           fail_on_unmatched_files: true
 
+      - name: Upload APK to Cloudflare R2 and verify CDN checksum
+        if: github.event_name == 'push'
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          APK_NAME: ${{ env.APK_NAME }}
+        run: |
+          if [ -z "$R2_ACCESS_KEY_ID" ] || [ -z "$R2_SECRET_ACCESS_KEY" ] || [ -z "$R2_ACCOUNT_ID" ]; then
+            echo "::notice::Skipping Cloudflare R2 upload: configure GitHub secrets R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, and R2_ACCOUNT_ID to mirror the release APK to bucket etai-apk."
+            exit 0
+          fi
+          if [ ! -f "$APK_NAME" ]; then
+            echo "::error::Release APK not found: $APK_NAME"
+            exit 1
+          fi
+          export AWS_DEFAULT_REGION=auto
+          export AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID"
+          export AWS_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY"
+          aws s3 cp "$APK_NAME" "s3://etai-apk/$APK_NAME" \
+            --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
+            --content-type application/vnd.android.package-archive
+          LOCAL_SHA=$(sha256sum "$APK_NAME" | awk '{print $1}')
+          REMOTE_SHA=$(curl -fsSL "https://dl.etais.dev/$APK_NAME" | sha256sum | awk '{print $1}')
+          if [ "$LOCAL_SHA" != "$REMOTE_SHA" ]; then
+            echo "::error::R2/CDN checksum mismatch for $APK_NAME"
+            echo "local  $LOCAL_SHA"
+            echo "remote $REMOTE_SHA"
+            exit 1
+          fi
+          echo "R2 upload verified: https://dl.etais.dev/$APK_NAME (sha256 $LOCAL_SHA)"
+
       - name: Manual run note
         if: github.event_name == 'workflow_dispatch'
         run: |
