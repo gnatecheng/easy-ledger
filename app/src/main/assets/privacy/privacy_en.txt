@@ -43,6 +43,8 @@ Changes
 If this policy changes materially, we will update the effective date and note it on the website or in release notes where practical.
 
 Contact
-https://etais.dev/ or Issues / Discussions on GitHub: gnatecheng/easy-ledger.
+· Email: hi@etais.dev
+· Feedback: GitHub Issues / Discussions on gnatecheng/easy-ledger
+· Website: https://etais.dev/
 
 Full web version: https://etais.dev/en/privacy/

@@ -129,7 +129,12 @@
     <string name="about_github">GitHub repository</string>
     <string name="github_repo_url">https://github.com/gnatecheng/easy-ledger</string>
     <string name="about_open_github">Open in browser</string>
+    <string name="about_contact">Contact email</string>
+    <string name="about_open_email">Send email</string>
+    <string name="about_github_feedback">GitHub Issues / Discussions</string>
+    <string name="about_open_github_issues">Open GitHub feedback</string>
     <string name="about_build_time_unknown">—</string>
+    <string name="support_email">hi@etais.dev</string>
 
     <string name="privacy_policy_title">Privacy policy</string>
     <string name="privacy_notice_title">Privacy notice</string>
