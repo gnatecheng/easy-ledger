@@ -98,10 +98,12 @@ jobs:
         run: |
           VERSION_NAME="${{ steps.version.outputs.name }}"
           APK_NAME="easy-ledger-${VERSION_NAME}.apk"
+          AAB_NAME="easy-ledger-${VERSION_NAME}.aab"
           cp app/build/outputs/apk/release/app-release.apk "${APK_NAME}"
+          cp app/build/outputs/bundle/release/app-release.aab "${AAB_NAME}"
           echo "APK_NAME=${APK_NAME}" >> "$GITHUB_ENV"
-          ls -la "${APK_NAME}"
-          ls -la app/build/outputs/bundle/release/
+          echo "AAB_NAME=${AAB_NAME}" >> "$GITHUB_ENV"
+          ls -la "${APK_NAME}" "${AAB_NAME}"
 
       - name: Upload release AAB artifact
         uses: actions/upload-artifact@v4
@@ -124,7 +126,7 @@ jobs:
             echo
             echo "---"
             echo
-            echo "Signed release (\`assembleRelease\` + \`bundleRelease\`), applicationId \`com.qingjizhang.app\`. AAB attached as workflow artifact for Play upload."
+            echo "Signed release (\`assembleRelease\` + \`bundleRelease\`), applicationId \`com.qingjizhang.app\`. This release includes the signed APK (sideload) and signed AAB (Google Play)."
           } > release_body.md
 
       - name: Publish GitHub Release
@@ -133,7 +135,9 @@ jobs:
         with:
           name: Easy Ledger ${{ steps.version.outputs.name }}
           body_path: release_body.md
-          files: ${{ env.APK_NAME }}
+          files: |
+            ${{ env.APK_NAME }}
+            ${{ env.AAB_NAME }}
           fail_on_unmatched_files: true
 
       - name: Upload APK to Cloudflare R2 and verify CDN checksum
