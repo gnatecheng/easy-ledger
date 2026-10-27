@@ -151,6 +151,17 @@
     <string name="inactivity_desc">Gently nudge you after several days without entries. Set 0 to disable.</string>
     <string name="inactivity_days">Days</string>
     <string name="settings_saved">Saved</string>
+    <string name="check_for_updates">Check for updates</string>
+    <string name="check_for_updates_checking">Checking for updates…</string>
+    <string name="update_up_to_date">You’re on the latest version</string>
+    <string name="update_error_network">Couldn’t reach the update server. Try again later.</string>
+    <string name="update_error_parse">Update info was invalid. Try again later.</string>
+    <string name="update_error_play">Google Play update isn’t available right now</string>
+    <string name="update_error_generic">Couldn’t check for updates. Try again later.</string>
+    <string name="update_play_started">Opening Google Play update</string>
+    <string name="update_available_title">Update available: %1$s</string>
+    <string name="update_available_body">Version code %1$d. Tap below to download the APK.</string>
+    <string name="update_download_apk">Download APK</string>
     <string name="save_settings">Save settings</string>
     <string name="clear_all_txns">Clear all transactions (keep categories &amp; accounts)</string>
     <string name="restore_demo">Restore demo data</string>

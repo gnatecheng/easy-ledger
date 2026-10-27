@@ -172,6 +172,48 @@ jobs:
           fi
           echo "R2 upload verified: https://dl.etais.dev/$APK_NAME (sha256 $LOCAL_SHA)"
 
+      - name: Upload version manifest to Cloudflare R2
+        if: github.event_name == 'push'
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          VERSION_NAME: ${{ steps.version.outputs.name }}
+          VERSION_CODE: ${{ steps.version.outputs.code }}
+          APK_NAME: ${{ env.APK_NAME }}
+        run: |
+          if [ -z "$R2_ACCESS_KEY_ID" ] || [ -z "$R2_SECRET_ACCESS_KEY" ] || [ -z "$R2_ACCOUNT_ID" ]; then
+            echo "::notice::Skipping version manifest upload: R2 secrets not configured."
+            exit 0
+          fi
+          python3 <<'PY'
+          import json
+          import os
+          code = os.environ["VERSION_CODE"]
+          name = os.environ["VERSION_NAME"]
+          apk = os.environ["APK_NAME"]
+          with open(f"fastlane/metadata/android/en-US/changelogs/{code}.txt", encoding="utf-8") as f:
+              en = f.read()
+          with open(f"fastlane/metadata/android/zh-CN/changelogs/{code}.txt", encoding="utf-8") as f:
+              zh = f.read()
+          payload = {
+              "versionCode": int(code),
+              "versionName": name,
+              "apkUrl": f"https://dl.etais.dev/{apk}",
+              "releaseNotes": {"en": en, "zh": zh},
+          }
+          with open("easy-ledger-version.json", "w", encoding="utf-8") as out:
+              json.dump(payload, out, ensure_ascii=False, indent=2)
+              out.write("\n")
+          PY
+          export AWS_DEFAULT_REGION=auto
+          export AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID"
+          export AWS_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY"
+          aws s3 cp easy-ledger-version.json "s3://etai-apk/easy-ledger-version.json" \
+            --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
+            --content-type application/json
+          echo "Version manifest uploaded: https://dl.etais.dev/easy-ledger-version.json"
+
       - name: Manual run note
         if: github.event_name == 'workflow_dispatch'
         run: |
