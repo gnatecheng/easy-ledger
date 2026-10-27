@@ -27,6 +27,7 @@
 - **统计**：月度收支与结余（对比上月）、分类饼图、近 12 个月趋势；可按时间、账户、标签筛选；可分享月报图片或导出 PDF。
 - **预算与提醒**：每月总预算 + 分类预算；达到 80% 警告、超过 100% 超支；可配置大额单笔阈值；多日未记账会在首页轻提醒。
 - **外观与语言**：跟随系统 / 浅色 / 深色主题；中文与 English 界面切换（我的 → 设置）。
+- **手动检查更新**：我的 → 提醒设置 → **检查更新**（不会在启动时自动检查）。通过 Google Play 安装的版本走 Play 应用内更新；自装 APK 会与 `dl.etais.dev` 上的 [`easy-ledger-version.json`](https://dl.etais.dev/easy-ledger-version.json) 比较 `versionCode`，若有新版本则提示下载。
 - **关于**：版本号、构建时间、GitHub 开源仓库链接（我的 → 关于）。
 - **周期记账**：每天 / 每周 / 每月规则；打开应用时自动生成到期流水；可编辑、暂停、删除。
 - **桌面小组件**：本月收入、支出、结余（绿/红），点按打开应用，记账后自动刷新。
@@ -96,6 +97,8 @@ GitHub Actions [`.github/workflows/release-apk.yml`](.github/workflows/release-a
 **Release 标签**：仅 semver（如 `v1.3.1`），不要用日期标签。
 
 发布附件文件名：`easy-ledger-{versionName}.apk`（例如 `easy-ledger-1.3.1.apk`）。
+
+若配置了 R2 上传 Secrets，Release 工作流还会向同一 `etai-apk` 存储桶发布 `easy-ledger-version.json`（CDN：`https://dl.etais.dev/easy-ledger-version.json`），包含 `versionCode`、`versionName`、`apkUrl` 及可选的中英 `releaseNotes`，供自装版本在应用内检查更新。
 
 ### 从 debug 自装版迁移
 

@@ -163,6 +163,17 @@
     <string name="inactivity_desc">连续若干天没有新记录时，首页会轻轻提醒。设为 0 可关闭。</string>
     <string name="inactivity_days">天数</string>
     <string name="settings_saved">已保存</string>
+    <string name="check_for_updates">检查更新</string>
+    <string name="check_for_updates_checking">正在检查更新…</string>
+    <string name="update_up_to_date">当前已是最新版本</string>
+    <string name="update_error_network">无法连接更新服务器，请稍后再试</string>
+    <string name="update_error_parse">更新信息无效，请稍后再试</string>
+    <string name="update_error_play">Google Play 更新暂不可用</string>
+    <string name="update_error_generic">检查更新失败，请稍后再试</string>
+    <string name="update_play_started">正在打开 Google Play 更新</string>
+    <string name="update_available_title">发现新版本 %1$s</string>
+    <string name="update_available_body">版本号 %1$d，点击下方按钮下载安装包。</string>
+    <string name="update_download_apk">下载 APK</string>
     <string name="save_settings">保存设置</string>
     <string name="clear_all_txns">清除全部流水（保留分类账户）</string>
     <string name="restore_demo">恢复演示数据</string>

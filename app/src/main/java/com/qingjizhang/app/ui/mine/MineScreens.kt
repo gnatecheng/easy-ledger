@@ -3,6 +3,7 @@ package com.qingjizhang.app.ui.mine
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -103,6 +104,11 @@ import com.qingjizhang.app.ui.components.ColorDot
 import com.qingjizhang.app.ui.components.MoneyText
 import com.qingjizhang.app.ui.theme.InkMuted
 import com.qingjizhang.app.ui.vmFactory
+import com.qingjizhang.app.update.AppUpdateCoordinator
+import com.qingjizhang.app.update.RemoteVersionInfo
+import com.qingjizhang.app.update.localizedNote
+import com.qingjizhang.app.update.resolveApkUrl
+import androidx.compose.ui.platform.LocalConfiguration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -481,6 +487,36 @@ class SettingsVm(private val app: AppContainer) : ViewModel() {
         }
     }
 
+    var updateChecking by mutableStateOf(false)
+        private set
+    var sideloadUpdate by mutableStateOf<RemoteVersionInfo?>(null)
+        private set
+
+    fun dismissSideloadUpdate() {
+        sideloadUpdate = null
+    }
+
+    fun checkForUpdates(
+        context: android.content.Context,
+        playUpdateLauncher: androidx.activity.result.ActivityResultLauncher<IntentSenderRequest>?,
+        onOutcome: (AppUpdateCoordinator.Outcome) -> Unit,
+    ) {
+        if (updateChecking) return
+        viewModelScope.launch {
+            updateChecking = true
+            try {
+                when (val outcome = AppUpdateCoordinator.checkForUpdates(context, playUpdateLauncher)) {
+                    is AppUpdateCoordinator.Outcome.SideloadUpdate -> sideloadUpdate = outcome.remote
+                    else -> onOutcome(outcome)
+                }
+            } catch (_: Exception) {
+                onOutcome(AppUpdateCoordinator.Outcome.Message(AppUpdateCoordinator.MessageKind.GenericError))
+            } finally {
+                updateChecking = false
+            }
+        }
+    }
+
     companion object {
         fun factory(app: AppContainer) = vmFactory { SettingsVm(app) }
     }
@@ -529,7 +565,11 @@ fun AppearanceSettingsScreen(onBack: () -> Unit, onPrivacy: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onPrivacy: () -> Unit) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    onPrivacy: () -> Unit,
+    playUpdateLauncher: androidx.activity.result.ActivityResultLauncher<IntentSenderRequest>? = null,
+) {
     val app = LocalApp.current
     val vm: SettingsVm = viewModel(factory = SettingsVm.factory(app))
     val settings by vm.settings.collectAsState()
@@ -540,6 +580,22 @@ fun SettingsScreen(onBack: () -> Unit, onPrivacy: () -> Unit) {
     val snack = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val isChineseUi = LocalConfiguration.current.locales[0].language.startsWith("zh")
+
+    fun showUpdateMessage(outcome: AppUpdateCoordinator.Outcome) {
+        val message = when (outcome) {
+            AppUpdateCoordinator.Outcome.UpToDate -> context.getString(R.string.update_up_to_date)
+            AppUpdateCoordinator.Outcome.PlayUpdateStarted -> context.getString(R.string.update_play_started)
+            is AppUpdateCoordinator.Outcome.Message -> when (outcome.kind) {
+                AppUpdateCoordinator.MessageKind.NetworkError -> context.getString(R.string.update_error_network)
+                AppUpdateCoordinator.MessageKind.ParseError -> context.getString(R.string.update_error_parse)
+                AppUpdateCoordinator.MessageKind.PlayUnavailable -> context.getString(R.string.update_error_play)
+                AppUpdateCoordinator.MessageKind.GenericError -> context.getString(R.string.update_error_generic)
+            }
+            is AppUpdateCoordinator.Outcome.SideloadUpdate -> return
+        }
+        scope.launch { snack.showSnackbar(message) }
+    }
 
     Scaffold(
         topBar = {
@@ -558,6 +614,24 @@ fun SettingsScreen(onBack: () -> Unit, onPrivacy: () -> Unit) {
             AppCard {
                 OutlinedButton(onClick = onPrivacy, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.privacy_policy_title))
+                }
+            }
+            AppCard {
+                Text(stringResource(R.string.check_for_updates), fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = {
+                        vm.checkForUpdates(context, playUpdateLauncher, ::showUpdateMessage)
+                    },
+                    enabled = !vm.updateChecking,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        stringResource(
+                            if (vm.updateChecking) R.string.check_for_updates_checking
+                            else R.string.check_for_updates,
+                        ),
+                    )
                 }
             }
             AppCard {
@@ -613,6 +687,30 @@ fun SettingsScreen(onBack: () -> Unit, onPrivacy: () -> Unit) {
                 Text(stringResource(R.string.restore_demo))
             }
         }
+    }
+    vm.sideloadUpdate?.let { remote ->
+        val notes = remote.releaseNotes.localizedNote(isChineseUi)
+        AlertDialog(
+            onDismissRequest = { vm.dismissSideloadUpdate() },
+            title = { Text(stringResource(R.string.update_available_title, remote.versionName)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.update_available_body, remote.versionCode))
+                    notes?.let { Text(it) }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(remote.resolveApkUrl())))
+                    vm.dismissSideloadUpdate()
+                }) { Text(stringResource(R.string.update_download_apk)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { vm.dismissSideloadUpdate() }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+        )
     }
     if (confirmClear) {
         AlertDialog(

@@ -27,6 +27,7 @@ A local-first personal finance Android app. Data lives in SQLite (Room) on your 
 - **Statistics**: monthly income, expense, and balance (vs. last month); category pie chart; 12-month trend; filter by time, account, tag; share monthly report image or export PDF.
 - **Budgets & reminders**: monthly total + per-category budgets; 80% warning and 100% over-budget alert; configurable large-transaction threshold; gentle home nudge after days without entries.
 - **Appearance & language**: follow system / light / dark theme; switch Chinese and English UI (Mine → Settings).
+- **Manual updates**: Mine → Reminder settings → **Check for updates** (never runs on launch). Installs from Google Play use Play In-App Updates; sideloaded APKs compare against [`easy-ledger-version.json`](https://dl.etais.dev/easy-ledger-version.json) on `dl.etais.dev` and offer a download link when a newer `versionCode` is published.
 - **About**: version, build time, GitHub repo link (Mine → About).
 - **Recurring entries**: daily / weekly / monthly rules; due items generated when you open the app; edit, pause, or delete rules.
 - **Home-screen widget**: this month’s income, expense, balance (green/red); tap opens the app; refreshes after you log transactions.
@@ -96,6 +97,8 @@ GitHub Actions [`.github/workflows/release-apk.yml`](.github/workflows/release-a
 **Release tags:** semver only (e.g. `v1.3.1`); do not use date tags.
 
 Published asset name: `easy-ledger-{versionName}.apk` (e.g. `easy-ledger-1.3.1.apk`).
+
+When R2 upload secrets are configured, the release workflow also publishes `easy-ledger-version.json` to the same `etai-apk` bucket (CDN: `https://dl.etais.dev/easy-ledger-version.json`) with `versionCode`, `versionName`, `apkUrl`, and optional bilingual `releaseNotes`. Sideloaded builds use this manifest for in-app update checks.
 
 ### Migrating from debug sideload builds
 

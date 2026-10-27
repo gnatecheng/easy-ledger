@@ -13,6 +13,8 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -213,9 +215,13 @@ fun QingJiZhangRoot() {
                 )
             }
             composable("settings") {
+                val playUpdateLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.StartIntentSenderForResult(),
+                ) { /* Play update flow */ }
                 SettingsScreen(
                     onBack = { nav.popBackStack() },
                     onPrivacy = { nav.navigate("privacy") },
+                    playUpdateLauncher = playUpdateLauncher,
                 )
             }
             composable("about") { AboutScreen(onBack = { nav.popBackStack() }) }
